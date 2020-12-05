@@ -1,0 +1,5 @@
+dataset_location: 'dsgdb9nsd.xyz'
+dataset_class: 'QM9'
+models: ['RandomForest']
+labels: ['HOMO']
+amount: 500
