@@ -48,7 +48,7 @@ class Dataset(ABC):
 
         class_name = spec['dataset_class']
         class_ = globals().get(class_name)
-        if class_ is None or type(class_) is not type or not issubclass(class_, cls):
+        if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
             raise Exception("%s is not a valid class name" % class_name)
 
         return class_(spec)
