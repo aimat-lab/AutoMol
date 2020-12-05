@@ -1,6 +1,7 @@
+import glob
 from abc import ABC
 
-import glob
+import pandas
 import yaml
 from rdkit import Chem
 
@@ -20,23 +21,28 @@ class Dataset(ABC):
 
     def __init__(self, spec):
 
-        self.data = {}
+        data = {}
         self.models = spec['models']
-        self.labels = spec['labels']
+        self.labels = [label.lower() for label in spec['labels']]
 
-        amount = spec['amount']
+        self.index = 0
+
+        amount = spec.get('amount', -1)
         for fn in glob.iglob(spec['dataset_location'] + '/*'):
-            if amount == 0: break
+            if amount == 0:
+                break
             with open(fn) as f:
                 text = f.read()
                 try:
-                    merge(self.data, self.parse(text))
+                    merge(data, self.parse(text))
                     amount -= 1
                 except Exception as e:
                     with open("erroneous.txt", "w") as out:
                         out.write(text)
                         out.write(str(e))
                     raise
+
+        self.data = pandas.DataFrame(data, columns=data.keys())
 
     @classmethod
     def from_input(cls, input_file):
@@ -55,6 +61,10 @@ class Dataset(ABC):
 
     def parse(self, text) -> dict:
         pass
+
+    def get_batch(self, amount):
+        self.index += amount
+        return self.data[self.index - amount: self.index]
 
 
 class QM9(Dataset):
