@@ -25,7 +25,7 @@ class Dataset(ABC):
         self.labels = spec['labels']
 
         amount = spec['amount']
-        for fn in glob.iglob(spec['dataset_location']):
+        for fn in glob.iglob(spec['dataset_location'] + '/*'):
             if amount == 0: break
             with open(fn) as f:
                 text = f.read()
