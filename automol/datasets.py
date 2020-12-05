@@ -1,6 +1,5 @@
 from abc import ABC
 
-
 import glob
 import yaml
 from rdkit import Chem
