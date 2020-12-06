@@ -66,6 +66,9 @@ class Dataset(ABC):
         self.index += amount
         return self.data[self.index - amount: self.index]
 
+    def __iter__(self):
+        return self.data.__iter__()
+
 
 class QM9(Dataset):
 

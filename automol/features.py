@@ -25,8 +25,8 @@ class FeatureGenerator:
         if feature_name not in FeatureGenerator.__featureList:
             raise Exception('unknown features')
 
-        if FeatureGenerator.__featureList[feature_name][0] not in self.data_set:
-            raise Exception('requirements for feature %s not satisfied by data set'%feature_name)
+        if any(req not in self.data_set for req in FeatureGenerator.__featureList[feature_name][0]):
+            raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
 
         if feature_name not in self.__generated_features:
             self.__generated_features[feature_name] = numpy.array(
