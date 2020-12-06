@@ -1,6 +1,3 @@
-from abc import ABC
-
-
 from .datasets import *
 
 
@@ -23,7 +20,7 @@ class FeatureGenerator:
 
     def get_feature(self, feature_name):
         if feature_name not in FeatureGenerator.__featureList:
-            raise Exception('unknown features')
+            raise Exception('unknown feature %s' % feature_name)
 
         if any(req not in self.data_set for req in FeatureGenerator.__featureList[feature_name][0]):
             raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
