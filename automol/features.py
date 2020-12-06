@@ -30,7 +30,7 @@ class FeatureGenerator:
 
         if feature_name not in self.__generated_features:
             self.__generated_features[feature_name] = numpy.array(
-                FeatureGenerator.__featureList[feature_name][1](self.data_set))
+                FeatureGenerator.__featureList[feature_name][1](self.data_set.data))
 
         return self.__generated_features[feature_name]
 
