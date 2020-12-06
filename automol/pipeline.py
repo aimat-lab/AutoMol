@@ -19,7 +19,12 @@ class Pipeline:
 
     def train(self):
         for model in self.model_generator.generate_models(self.spec['models']):
-            model.train()
+            for label in self.data_set.data[self.spec['labels']]:
+                X_feature_name = 'fingerprint'
+                X = self.feature_generator.get_feature(X_feature_name)
+                y = self.data_set.data[label]
+                print("Training model {} with X = {} and y = {}".format(model, X_feature_name, label))
+                model.fit(X, y)
 
     def get_statistics(self):
         pass  # something here
