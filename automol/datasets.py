@@ -2,7 +2,6 @@ import glob
 from abc import ABC
 
 import pandas
-import yaml
 from rdkit import Chem
 
 
@@ -45,13 +44,7 @@ class Dataset(ABC):
         self.data = pandas.DataFrame(data, columns=data.keys())
 
     @classmethod
-    def from_input(cls, input_file):
-        with open(input_file, 'r') as file:
-            try:
-                spec = yaml.safe_load(file)
-            except yaml.YAMLError as e:
-                raise e
-
+    def from_spec(cls, spec):
         class_name = spec['dataset_class']
         class_ = globals().get(class_name)
         if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
