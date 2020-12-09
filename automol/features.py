@@ -1,8 +1,10 @@
-from .datasets import *
-
-
+from .datasets import Dataset
 import numpy
-from rdkit import Chem
+import pandas as pd
+import inspect
+import rdkit.Chem as Chem
+import rdkit.Chem.Descriptors as Descriptors
+from collections import OrderedDict
 
 
 class FeatureGenerator:
@@ -14,7 +16,7 @@ class FeatureGenerator:
         ],
     }
 
-    def __init__(self, data_set:Dataset):
+    def __init__(self, data_set: Dataset):
         self.data_set = data_set
         self.__generated_features = {}
 
@@ -30,6 +32,38 @@ class FeatureGenerator:
                 FeatureGenerator.__featureList[feature_name][1](self.data_set.data))
 
         return self.__generated_features[feature_name]
+
+
+class RdkitDescriptors:
+
+    requires = ['smiles']
+
+    def produce(self, data: pd.DataFrame,
+                to_calculate: list = None,
+                sanitize: bool = True,
+                axis: int = 0) -> pd.DataFrame:
+        smiles = data[self.requires[0]].values
+        to_calculate = to_calculate or []
+        calc_props = OrderedDict(inspect.getmembers(Descriptors, inspect.isfunction))
+        for key in list(calc_props.keys()):
+            if key.startswith('_'):
+                del calc_props[key]
+                continue
+            if key == 'setupAUTOCorrDescriptors':
+                del calc_props[key]
+                continue
+            if len(to_calculate) != 0 and key not in to_calculate:
+                del calc_props[key]
+
+        df = pd.DataFrame(columns=list(calc_props.keys()), index=range(len(smiles)))
+        for i, s in enumerate(smiles):
+            mol = Chem.MolFromSmiles(s)
+            features = [val(mol) for key, val in calc_props.items()]
+            df.loc[i, :] = features
+
+        if sanitize:
+            df.dropna(axis=axis, how='any', inplace=True)
+        return df
 
 
 """

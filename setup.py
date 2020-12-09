@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",
-    install_requires=[],
+    install_requires=["numpy", "pandas", "rdkit"],
     packages=find_packages(),
     include_package_data=True,
     package_data={"automol": ["*.json", "*.yaml"]},
