@@ -2,3 +2,6 @@
 .idea
 automol/__pycache__
 dsgdb9nsd.xyz
+automol.egg-info
+build
+dist
