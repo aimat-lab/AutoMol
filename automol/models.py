@@ -2,8 +2,9 @@ from .features import *
 
 
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier
+from sklearn.linear_model import LinearRegression, SGDClassifier
+from sklearn.neural_network import MLPRegressor, MLPClassifier
 
 
 def hyperparameter_search(model_name, feature_generator):
@@ -16,21 +17,50 @@ def hyperparameter_search(model_name, feature_generator):
 
 class ModelGenerator:
 
-    __modelList = {
-        'RandomForestRegressor': RandomForestRegressor,
-        'LinearRegression': LinearRegression,
-        'GradientBoostingRegressor': GradientBoostingRegressor,
-        'GaussianProcessRegressor': GaussianProcessRegressor,
-    }
+    __modelList = {}
+    __modelTypes = {'Regressor': 'regression', 'Regression': 'regression', 'Classifier': 'classification'}
+    for gvar, gval in globals().items():
+        if issubclass(type(gval), type):
+            if any(gvar.endswith(modelType) for modelType in __modelTypes):
+                __modelList[gvar] = gval
 
     def __init__(self, feature_generator: FeatureGenerator):
         self.feature_generator = feature_generator
 
-    def generate_models(self, model_list):
-        return [self.generate_model(model_name) for model_name in model_list]
+    def get_models(self, problem_type, to_exclude=None):
+        return self.generate_models(problem_type, self.__modelList[problem_type].keys() - to_exclude)
 
-    def generate_model(self, model_name):
-        if model_name not in ModelGenerator.__modelList:
+    def generate_models(self, problem_type, model_list):
+        return [self.generate_model(problem_type, model_name) for model_name in model_list]
+
+    def generate_model(self, problem_type, model_name):
+        type_list = ModelGenerator.__modelList[problem_type]
+        if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
 
-        return ModelGenerator.__modelList[model_name](**hyperparameter_search(model_name, self.feature_generator))
+        return [
+            ModelAbstraction(type_list[model_name](**hyperparameter_search(model_name, self.feature_generator)),
+                             feature)
+            for feature in self.feature_generator.get_acceptable_features(self.acceptable_feature_types(model_name))
+        ]
+
+    def get_model_type(self, model_name):
+        return [modelType for modelType in self.__modelTypes if model_name.endswith(modelType)][0]
+
+    def get_model_prefix(self, model_name):
+        return str.replace(model_name, self.get_model_type(model_name), '')
+
+    def acceptable_feature_types(self, model_name):
+        return {
+            'MLP': {'vector'},
+            # todo
+        }[self.get_model_prefix(model_name)]
+
+
+class ModelAbstraction:
+    def __init__(self, model, feature):
+        self.model = model
+        self.feature = feature
+
+    def fit(self, y):
+        self.model.fit(self.feature, y)

@@ -7,6 +7,7 @@ import yaml
 
 
 class Pipeline:
+
     def __init__(self, input_file):
         with open(input_file, 'r') as file:
             try:
@@ -18,13 +19,11 @@ class Pipeline:
         self.model_generator = ModelGenerator(self.feature_generator)
 
     def train(self):
-        for model in self.model_generator.generate_models(self.spec['models']):
-            for label in self.data_set.data[self.spec['labels']]:
-                X_feature_name = 'fingerprint'
-                X = self.feature_generator.get_feature(X_feature_name)
-                y = self.data_set.data[label]
-                print("Training model {} with X = {} and y = {}".format(model, X_feature_name, label))
-                model.fit(X, y)
+        for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
+
+            x = self.feature_generator.get_feature(x_feature_name)
+            y = self.data_set.data[self.spec['labels']]
+            model.fit(x, y)
 
     def get_statistics(self):
         pass  # something here
