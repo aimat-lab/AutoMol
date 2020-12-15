@@ -1,6 +1,6 @@
 dataset_location: 'dsgdb9nsd.xyz'
 dataset_class: 'QM9'
-labels: [homo]
+labels: ['homo']
 models_to_exclude: []
 problem: classification
 amount: 10

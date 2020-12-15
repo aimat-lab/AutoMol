@@ -1,10 +1,8 @@
-from .features import *
-
-
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier
-from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.neural_network import MLPRegressor, MLPClassifier
+from automol.features import FeatureGenerator
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor # noqa
+from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier # noqa
+from sklearn.linear_model import LinearRegression, SGDClassifier # noqa
+from sklearn.neural_network import MLPRegressor, MLPClassifier # noqa
 
 
 def hyperparameter_search(model_name, feature_generator):
@@ -19,13 +17,13 @@ class ModelGenerator:
 
     __modelList = {}
     __modelTypes = {'Regressor': 'regression', 'Regression': 'regression', 'Classifier': 'classification'}
-    for gvar, gval in globals().items():
-        if issubclass(type(gval), type):
-            if any(gvar.endswith(modelType) for modelType in __modelTypes):
-                __modelList[gvar] = gval
 
     def __init__(self, feature_generator: FeatureGenerator):
         self.feature_generator = feature_generator
+        for gvar, gval in globals().copy().items():
+            if issubclass(type(gval), type):
+                if any(gvar.endswith(modelType) for modelType in self.__modelTypes):
+                    self.__modelList[gvar] = gval
 
     def get_models(self, problem_type, to_exclude=None):
         return self.generate_models(problem_type, self.__modelList[problem_type].keys() - to_exclude)

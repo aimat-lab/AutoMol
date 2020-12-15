@@ -5,6 +5,17 @@ import pandas
 from rdkit import Chem
 
 
+def add(r, k, v):
+    if k not in r:
+        r[k] = []
+    r[k].append(v)
+
+
+def merge(a, b):
+    for k in b:
+        add(a, k, b[k])
+
+
 class Dataset(ABC):
 
     def __init__(self, spec):
@@ -20,7 +31,7 @@ class Dataset(ABC):
             with open(fn) as f:
                 text = f.read()
                 try:
-                    data = {**data, **{k: data[k] + v if k in data else v for k, v in self.parse(text).items()}}
+                    merge(data, self.parse(text))
                     amount -= 1
                 except Exception as e:
                     with open("erroneous.txt", "w") as out:
