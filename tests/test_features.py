@@ -25,5 +25,5 @@ class TestRdkitDescriptors(TestCase):
     def test_produce(self):
         f = RdkitDescriptors()
         features = f.produce(data)
-        features = f.produce(data, to_calculate=["MolLogP", "qed"])
+        features = f.produce(data, to_exclude=["MolLogP", "qed"])
         print(features)
