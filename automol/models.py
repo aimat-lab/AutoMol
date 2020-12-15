@@ -18,14 +18,23 @@ class ModelGenerator:
     __modelList = {}
     __modelTypes = {'Regressor': 'regression', 'Regression': 'regression', 'Classifier': 'classification'}
 
+    for gvar, gval in globals().items():
+        if gvar != 'ModelGenerator' and gvar != 'FeatureGenerator' and issubclass(type(gval), type):
+            for modelType in __modelTypes:
+                if gvar.endswith(modelType):
+                    if modelType not in __modelList:
+                        __modelList[modelType] = {}
+                    __modelList[modelType][gvar] = gval
+                    break
+
     def __init__(self, feature_generator: FeatureGenerator):
         self.feature_generator = feature_generator
-        for gvar, gval in globals().copy().items():
-            if issubclass(type(gval), type):
-                if any(gvar.endswith(modelType) for modelType in self.__modelTypes):
-                    self.__modelList[gvar] = gval
 
     def get_models(self, problem_type, to_exclude=None):
+        print("self.__modelList")
+        print(self.__modelList)
+        print("self.__modelList[problem_type].keys()")
+        print(self.__modelList[problem_type].keys())
         return self.generate_models(problem_type, self.__modelList[problem_type].keys() - to_exclude)
 
     def generate_models(self, problem_type, model_list):

@@ -17,8 +17,8 @@ class Pipeline:
         self.model_generator = ModelGenerator(self.feature_generator)
 
     def train(self):
-        pass
-        # for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
+        for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
+            print(model)
         # x = get_available_features_for_model(model)
         # y = self.data_set.data[self.spec['labels']]
         # model.fit(x, y)
