@@ -2,8 +2,8 @@ from automol.datasets import Dataset
 import numpy
 import pandas as pd
 import inspect
-import rdkit.Chem as Chem
-import rdkit.Chem.Descriptors as Descriptors
+#import rdkit.Chem as Chem
+#import rdkit.Chem.Descriptors as Descriptors
 
 
 class Rdkit:

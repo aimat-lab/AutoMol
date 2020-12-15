@@ -1,6 +1,5 @@
 from automol.features import FeatureGenerator
 from automol.models import ModelGenerator
-from automol.datasets import Dataset
 import yaml
 
 
@@ -18,10 +17,7 @@ class Pipeline:
 
     def train(self):
         for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
-            print(model)
-        # x = get_available_features_for_model(model)
-        # y = self.data_set.data[self.spec['labels']]
-        # model.fit(x, y)
+            model.fit(self.data_set.data[self.spec['labels']])
 
     def get_statistics(self):
         pass  # something here

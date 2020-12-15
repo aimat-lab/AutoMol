@@ -31,14 +31,10 @@ class ModelGenerator:
         self.feature_generator = feature_generator
 
     def get_models(self, problem_type, to_exclude=None):
-        print("self.__modelList")
-        print(self.__modelList)
-        print("self.__modelList[problem_type].keys()")
-        print(self.__modelList[problem_type].keys())
         return self.generate_models(problem_type, self.__modelList[problem_type].keys() - to_exclude)
 
     def generate_models(self, problem_type, model_list):
-        return [self.generate_model(problem_type, model_name) for model_name in model_list]
+        return [a for model_name in model_list for a in self.generate_model(problem_type, model_name)]
 
     def generate_model(self, problem_type, model_name):
         type_list = ModelGenerator.__modelList[problem_type]
@@ -60,7 +56,8 @@ class ModelGenerator:
     def acceptable_feature_types(self, model_name):
         return {
             'MLP': {'vector'},
-            # todo
+            'RandomForest': {'vector'},
+            # todo add rest
         }[self.get_model_prefix(model_name)]
 
 
