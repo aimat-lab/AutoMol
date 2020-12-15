@@ -5,3 +5,4 @@ dsgdb9nsd.xyz
 automol.egg-info
 build
 dist
+tests/__pycache__
