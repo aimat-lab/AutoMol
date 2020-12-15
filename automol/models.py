@@ -23,8 +23,8 @@ class ModelGenerator:
             for modelType in __modelTypes:
                 if gvar.endswith(modelType):
                     if modelType not in __modelList:
-                        __modelList[modelType] = {}
-                    __modelList[modelType][gvar] = gval
+                        __modelList[__modelTypes[modelType]] = {}
+                    __modelList[__modelTypes[modelType]][gvar] = gval
                     break
 
     def __init__(self, feature_generator: FeatureGenerator):

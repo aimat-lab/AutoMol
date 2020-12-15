@@ -2,7 +2,7 @@ import glob
 from abc import ABC
 
 import pandas
-from rdkit import Chem
+# from rdkit import Chem
 
 
 class Dataset(ABC):
