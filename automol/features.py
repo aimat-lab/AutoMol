@@ -1,4 +1,4 @@
-from automol.datasets import Dataset
+from .datasets import Dataset
 import numpy
 import pandas as pd
 import inspect

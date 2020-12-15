@@ -1,6 +1,6 @@
-from automol.features import FeatureGenerator
-from automol.models import ModelGenerator
-from automol.datasets import Dataset
+from .features import FeatureGenerator
+from .models import ModelGenerator
+from .datasets import Dataset
 import yaml
 
 

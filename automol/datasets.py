@@ -31,7 +31,7 @@ class Dataset(ABC):
             with open(fn) as f:
                 text = f.read()
                 try:
-                    merge(data, self.parse(text))
+                    data = {**data, **{k: data[k] + v if k in data else v for k, v in self.parse(text).items()}}
                     amount -= 1
                 except Exception as e:
                     with open("erroneous.txt", "w") as out:

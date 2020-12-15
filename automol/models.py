@@ -1,4 +1,4 @@
-from automol.features import FeatureGenerator
+from .features import FeatureGenerator
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor # noqa
 from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier # noqa
 from sklearn.linear_model import LinearRegression, SGDClassifier # noqa
