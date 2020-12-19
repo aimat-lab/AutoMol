@@ -41,9 +41,10 @@ class FeatureGenerator:
             'iam': {'vector'},
             'requirements': ['smiles'],
             'transform':
-                lambda df: pd.DataFrame([numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
-                                         for smi in df['smiles']],
-                                        columns=['fingerprint'])
+                lambda df: pd.DataFrame({
+                    'fingerprint': [numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
+                                         for smi in df['smiles']]
+                })
         },
         'rdkit': {
             'iam': {'vector'},
