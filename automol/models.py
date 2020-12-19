@@ -58,7 +58,7 @@ class ModelGenerator:
             'MLP': {'vector'},
             'RandomForest': {'vector'},
             # todo add rest
-        }[self.get_model_prefix(model_name)]
+        }.get(self.get_model_prefix(model_name), set())
 
 
 class ModelAbstraction:
