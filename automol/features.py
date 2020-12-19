@@ -58,11 +58,11 @@ class FeatureGenerator:
 
     def get_feature(self, feature_name):
 
-        if feature_name not in FeatureGenerator.__featureList:
-            raise Exception('unknown feature %s' % feature_name)
-
-        if not self.requirements_fulfilled(feature_name):
-            raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
+        # if feature_name not in FeatureGenerator.__featureList:
+        #     raise Exception('unknown feature %s' % feature_name)
+        #
+        # if not self.requirements_fulfilled(feature_name):
+        #     raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
 
         if feature_name not in self.__generated_features:
             self.__generated_features[feature_name] = numpy.array(
@@ -79,7 +79,7 @@ class FeatureGenerator:
             returns list of feature_names that can be offered and are acceptable
         :rtype: list[str]
         """
-        return [k for k in self.__generatable_features if FeatureGenerator.__featureList[k]['iam'] in acceptable_types]
+        return [k for k in self.__generatable_features if FeatureGenerator.__featureList[k]['iam'] | acceptable_types]
 
 
 """

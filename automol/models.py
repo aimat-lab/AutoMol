@@ -27,7 +27,7 @@ class ModelGenerator:
             for modelType in __modelTypes:
                 print(modelType, gvar.endswith(modelType))
                 if gvar.endswith(modelType):
-                    if modelType not in __modelList:
+                    if __modelTypes[modelType] not in __modelList:
                         __modelList[__modelTypes[modelType]] = {}
                     __modelList[__modelTypes[modelType]][gvar] = gval
                     print(gvar, __modelList)
@@ -49,8 +49,8 @@ class ModelGenerator:
 
         return [
             ModelAbstraction(type_list[model_name](**hyperparameter_search(model_name, self.feature_generator)),
-                             feature)
-            for feature in self.feature_generator.get_acceptable_features(self.acceptable_feature_types(model_name))
+                             self.feature_generator.get_feature(feat_name))
+            for feat_name in self.feature_generator.get_acceptable_features(self.acceptable_feature_types(model_name))
         ]
 
     def get_model_type(self, model_name):
