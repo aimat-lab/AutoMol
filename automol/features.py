@@ -43,7 +43,7 @@ class FeatureGenerator:
             'transform':
                 lambda df: pd.DataFrame({
                     'fingerprint': [numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
-                                         for smi in df['smiles']]
+                                    for smi in df['smiles']]
                 })
         },
         'rdkit': {
