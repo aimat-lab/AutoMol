@@ -1,8 +1,11 @@
 from automol.features import FeatureGenerator
+
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor # noqa
 from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier # noqa
 from sklearn.linear_model import LinearRegression, SGDClassifier # noqa
 from sklearn.neural_network import MLPRegressor, MLPClassifier # noqa
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error # noqa
 
 
 def hyperparameter_search(model_name, feature_generator):
@@ -68,3 +71,9 @@ class ModelAbstraction:
 
     def fit(self, y):
         self.model.fit(self.feature, y)
+
+    def predict(self, x):
+        return self.predict(x)
+
+    def __str__(self):
+        return '%s-%s' % (str(type(self.model)), self.feature)
