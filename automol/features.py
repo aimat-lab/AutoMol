@@ -18,14 +18,13 @@ class Rdkit:
         calc_props = {k: v for k, v in inspect.getmembers(Descriptors, inspect.isfunction)
                       if not k.startswith('_') and k not in to_exclude}
 
-        df = pd.DataFrame(
-            [
+        df = pd.DataFrame({
+            'rdkit': [
                 [
                     v(Chem.MolFromSmiles(smi)) for k, v in calc_props.items()
                 ]
                 for smi in df['smiles']
-            ],
-            columns=['rdkit'])
+            ], })
 
         if sanitize:
             df.dropna(axis=axis, how='any', inplace=True)
