@@ -19,13 +19,13 @@ class Rdkit:
                       if not k.startswith('_') and k not in to_exclude}
 
         df = pd.DataFrame(
-            [[
+            [
                 [
                     v(Chem.MolFromSmiles(smi)) for k, v in calc_props.items()
                 ]
                 for smi in df['smiles']
-            ]],
-            columns='rdkit')
+            ],
+            columns=['rdkit'])
 
         if sanitize:
             df.dropna(axis=axis, how='any', inplace=True)
@@ -39,7 +39,7 @@ class FeatureGenerator:
             'iam': {'vector'},
             'requirements': ['smiles'],
             'transform':
-                lambda df: pd.DataFrame([[Chem.RDKFingerprint(Chem.MolFromSmiles(smi)) for smi in df['smiles']]],
+                lambda df: pd.DataFrame([Chem.RDKFingerprint(Chem.MolFromSmiles(smi)) for smi in df['smiles']],
                                         columns=['fingerprint'])
         },
         'rdkit': {
