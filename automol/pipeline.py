@@ -5,7 +5,7 @@ import yaml
 
 from sklearn.model_selection import train_test_split
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 class Pipeline:
@@ -27,8 +27,9 @@ class Pipeline:
             self.models.append(model)
             model.fit(train)
             pred = model.predict()
-            print("Model %s has MAE: %f" % (model, pred))
-            print("Model %s has MSE: %f" % (model, pred))
+            print("Model %s has MAE: %f" % (model, mean_absolute_error(pred)))
+            print("Model %s has MSE: %f" % (model, mean_squared_error(pred)))
+            print("Model %s has R2S: %f" % (model, r2_score(pred)))
 
     def get_statistics(self):
         pass  # something here
