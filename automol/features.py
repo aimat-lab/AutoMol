@@ -1,7 +1,10 @@
-from automol.datasets import Dataset
+import inspect
+
 import numpy
 import pandas as pd
-import inspect
+from automol.datasets import Dataset
+
+
 #import rdkit.Chem as Chem
 #import rdkit.Chem.Descriptors as Descriptors
 
@@ -38,7 +41,8 @@ class FeatureGenerator:
             'iam': {'vector'},
             'requirements': ['smiles'],
             'transform':
-                lambda df: pd.DataFrame([Chem.RDKFingerprint(Chem.MolFromSmiles(smi)) for smi in df['smiles']],
+                lambda df: pd.DataFrame([numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
+                                         for smi in df['smiles']],
                                         columns=['fingerprint'])
         },
         'rdkit': {
