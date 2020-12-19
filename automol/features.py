@@ -52,7 +52,8 @@ class FeatureGenerator:
     def __init__(self, data_set: Dataset):
         self.data_set = data_set
         # feature_name : sub data_frame of features associated with feature_name
-        self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList if self.requirements_fulfilled(k)}
+        self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items()
+                                       if self.requirements_fulfilled(k)}
         self.__generated_features = {}
 
     def get_feature(self, feature_name):
