@@ -1,3 +1,4 @@
+from automol.datasets import Dataset
 from automol.features import FeatureGenerator
 from automol.models import ModelGenerator
 
@@ -22,14 +23,14 @@ class Pipeline:
         self.models = []
 
     def train(self):
-        train, test, = train_test_split(self.data_set.data[self.spec['labels']], test_size=.25)
+        y_train, y_test = train_test_split(self.data_set.data[self.spec['labels']], test_size=.25)
         for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
             self.models.append(model)
-            model.fit(train)
+            model.fit(y_train)
             pred = model.predict()
-            print("Model %s has MAE: %f" % (model, mean_absolute_error(pred)))
-            print("Model %s has MSE: %f" % (model, mean_squared_error(pred)))
-            print("Model %s has R2S: %f" % (model, r2_score(pred)))
+            print("Model %s has MAE: %f" % (model, mean_absolute_error(y_test, pred)))
+            print("Model %s has MSE: %f" % (model, mean_squared_error(y_test, pred)))
+            print("Model %s has R2S: %f" % (model, r2_score(y_test, pred)))
 
     def get_statistics(self):
         pass  # something here

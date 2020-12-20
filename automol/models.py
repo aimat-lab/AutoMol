@@ -23,14 +23,11 @@ class ModelGenerator:
 
     for gvar, gval in globals().items():
         if issubclass(type(gval), type):
-            print(gvar)
             for modelType in __modelTypes:
-                print(modelType, gvar.endswith(modelType))
                 if gvar.endswith(modelType):
                     if __modelTypes[modelType] not in __modelList:
                         __modelList[__modelTypes[modelType]] = {}
                     __modelList[__modelTypes[modelType]][gvar] = gval
-                    print(gvar, __modelList)
                     break
 
     def __init__(self, feature_generator: FeatureGenerator):
@@ -46,7 +43,6 @@ class ModelGenerator:
         type_list = ModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
-
         return [
             ModelAbstraction(type_list[model_name](**hyperparameter_search(model_name, self.feature_generator)),
                              self.feature_generator.get_feature(feat_name))
