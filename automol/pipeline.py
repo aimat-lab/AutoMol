@@ -1,11 +1,8 @@
 from automol.datasets import Dataset
 from automol.features import FeatureGenerator
 from automol.models import ModelGenerator
-
+import numpy as np
 import yaml
-
-from sklearn.model_selection import train_test_split
-
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
@@ -22,8 +19,10 @@ class Pipeline:
         self.model_generator = ModelGenerator(self.feature_generator)
         self.models = []
 
-    def train(self):
-        y_train, y_test = train_test_split(self.data_set.data[self.spec['labels']], test_size=.25)
+    def train(self, y_test_size=0.25):
+        y = self.data_set.data[self.spec['labels']]
+        index_split = int((1. - y_test_size) * len(y))
+        y_train, y_test = np.split(y, [0, index_split])
         for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
             self.models.append(model)
             model.fit(y_train)
