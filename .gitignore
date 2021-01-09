@@ -6,3 +6,4 @@ automol.egg-info
 build
 dist
 tests/__pycache__
+data

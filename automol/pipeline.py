@@ -22,7 +22,9 @@ class Pipeline:
     def train(self, y_test_size=0.25):
         y = self.data_set.data[self.spec['labels']]
         index_split = int((1. - y_test_size) * len(y))
-        y_train, y_test = np.split(y, [0, index_split])
+        y_train, y_test = np.split(y, [index_split])
+        print(y, y_train, y_test, sep='\n-------------\n')
+        print(type(y), type(y_train), type(y_test), sep='\n-------------\n')
         for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
             self.models.append(model)
             model.fit(y_train)

@@ -52,6 +52,7 @@ class FeatureGenerator:
 
     def __init__(self, data_set: Dataset):
         self.data_set = data_set
+
         # feature_name : sub data_frame of features associated with feature_name
         self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items()
                                        if self.requirements_fulfilled(k)}
@@ -62,8 +63,8 @@ class FeatureGenerator:
         # if feature_name not in FeatureGenerator.__featureList:
         #     raise Exception('unknown feature %s' % feature_name)
         #
-        # if not self.requirements_fulfilled(feature_name):
-        #     raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
+        if not self.requirements_fulfilled(feature_name):
+            raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
 
         if feature_name not in self.__generated_features:
             self.__generated_features[feature_name] = numpy.array(
