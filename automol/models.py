@@ -69,6 +69,8 @@ class ModelAbstraction:
         self.feature = feature
 
     def fit(self, y):
+        self.y = (y)
+        return
         self.model.fit(self.feature, y)
 
     def predict(self, x):

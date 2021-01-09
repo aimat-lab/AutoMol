@@ -1,6 +1,7 @@
 import glob
 from abc import ABC
 
+import os
 import pandas
 from rdkit import Chem
 
@@ -11,7 +12,11 @@ class Dataset(ABC):
 
         data = {}
 
+        # index of iterating the dataset
         self.index = 0
+
+        if not os.path.isdir(spec['dataset_location']):
+            raise Exception("path %s doesn't exist" % spec['dataset_location'])
 
         amount = spec.get('amount', -1)
         for fn in glob.iglob(spec['dataset_location'] + '/*'):
@@ -29,6 +34,8 @@ class Dataset(ABC):
                     raise
 
         self.data = pandas.DataFrame(data, columns=data.keys())
+        if self.data.empty:
+            raise Exception("dataset empty")
 
     @classmethod
     def from_spec(cls, spec):
