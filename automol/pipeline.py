@@ -25,8 +25,8 @@ class Pipeline:
         y_train, y_test = np.split(y, [index_split])
         print(y, y_train, y_test, sep='\n-------------\n')
         print(type(y), type(y_train), type(y_test), sep='\n-------------\n')
-        for model in self.model_generator.get_models(self.spec['problem'], self.spec['models_to_exclude']):
-            self.models.append(model)
+        self.models = self.get_models()
+        for model in self.models:
             model.fit(y_train)
             pred = model.predict()
             print("Model %s has MAE: %f" % (model, mean_absolute_error(y_test, pred)))
@@ -38,3 +38,15 @@ class Pipeline:
 
     def print_spec(self):
         print(yaml.dump(self.spec))
+
+    def get_models(self):
+        if 'problem' not in self.spec:
+            raise Exception("Parameter 'problem' in yaml file not specified")
+        problem_type = self.spec['problem']
+        models_to_include = None
+        if 'models_to_include' in self.spec:
+            models_to_include = self.spec['models_to_include']
+        models_to_exclude = None
+        if 'models_to_exclude' in self.spec and not models_to_include:
+            models_to_exclude = self.spec['models_to_exclude']
+        return self.model_generator.get_models(problem_type, models_to_include, models_to_exclude)
