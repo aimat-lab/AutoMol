@@ -33,8 +33,14 @@ class ModelGenerator:
     def __init__(self, feature_generator: FeatureGenerator):
         self.feature_generator = feature_generator
 
-    def get_models(self, problem_type, to_exclude=None):
-        return self.generate_models(problem_type, self.__modelList[problem_type].keys() - to_exclude)
+    def get_models(self, problem_type, models_to_include=None, models_to_exclude=None):
+        available_models = self.__modelList[problem_type].keys()
+        if models_to_include is not None:
+            model_intersection = list(set(available_models).intersection(models_to_include))
+            return self.generate_models(problem_type, model_intersection)
+        if models_to_exclude is not None:
+            return self.generate_models(problem_type, available_models - models_to_exclude)
+        return self.generate_models(problem_type, available_models)
 
     def generate_models(self, problem_type, model_list):
         return [a for model_name in model_list for a in self.generate_model(problem_type, model_name)]
