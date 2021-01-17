@@ -1,5 +1,6 @@
 import glob
 from abc import ABC
+from automol.features import FeatureGenerator
 
 import os
 import pandas
@@ -8,12 +9,37 @@ from rdkit import Chem
 
 class Dataset(ABC):
 
-    def __init__(self, spec):
+    def __init__(self, data):
+        self.data = data
+        if self.data.empty:
+            raise Exception("dataset empty")
+        # cached feature generator
+        self.__featureGenerator = None
+
+    def feature_generator(self):
+        if self.__featureGenerator is None:
+            self.__featureGenerator = FeatureGenerator(self)
+        return self.__featureGenerator
+
+    def get_feature(self, feature_name):
+        """
+        wrapper on getting feature generator
+        :param feature_name:
+        :return:
+        """
+        return self.feature_generator().get_feature(feature_name)
+
+    def split(self, split_right):
+        return Dataset(self.data[0: split_right]), Dataset(self.data[split_right:])
+
+    @classmethod
+    def from_spec(cls, spec):
+        class_name = spec['dataset_class']
+        class_ = globals().get(class_name)
+        if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
+            raise Exception("%s is not a valid class name" % class_name)
 
         data = {}
-
-        # index of iterating the dataset
-        self.index = 0
 
         if not os.path.isdir(spec['dataset_location']):
             raise Exception("path %s doesn't exist" % spec['dataset_location'])
@@ -25,7 +51,7 @@ class Dataset(ABC):
             with open(fn) as f:
                 text = f.read()
                 try:
-                    data = {**data, **{k: data[k] + [v] if k in data else [v] for k, v in self.parse(text).items()}}
+                    data = {**data, **{k: data[k] + [v] if k in data else [v] for k, v in class_.parse(text).items()}}
                     amount -= 1
                 except Exception as e:
                     with open("erroneous.txt", "w") as out:
@@ -33,33 +59,25 @@ class Dataset(ABC):
                         out.write(str(e))
                     raise
 
-        self.data = pandas.DataFrame(data, columns=data.keys())
-        if self.data.empty:
-            raise Exception("dataset empty")
+        data = pandas.DataFrame(data, columns=data.keys())
+
+        return class_(data)
 
     @classmethod
-    def from_spec(cls, spec):
-        class_name = spec['dataset_class']
-        class_ = globals().get(class_name)
-        if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
-            raise Exception("%s is not a valid class name" % class_name)
-
-        return class_(spec)
-
-    def parse(self, text) -> dict:
+    def parse(cls, text) -> dict:
         pass
-
-    def get_batch(self, amount):
-        self.index += amount
-        return self.data[self.index - amount: self.index]
 
     def __iter__(self):
         return self.data.__iter__()
 
+    def __getitem__(self, key):
+        return self.data[key]
+
 
 class QM9(Dataset):
 
-    def parse(self, text):
+    @classmethod
+    def parse(cls, text):
         r = {}
         lines = str.splitlines(text)
         r['atom_count'] = int(lines[0])

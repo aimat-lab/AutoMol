@@ -1,7 +1,7 @@
 import inspect
 import numpy
 import pandas as pd
-from automol.datasets import Dataset
+
 import rdkit.Chem as Chem
 import rdkit.Chem.Descriptors as Descriptors
 
@@ -12,24 +12,20 @@ class Rdkit:
     def produce(df: pd.DataFrame,
                 to_exclude: list = None,
                 sanitize: bool = True,
-                axis: int = 0) -> pd.DataFrame:
+                axis: int = 0):
         to_exclude = to_exclude or []
         to_exclude.append('setupAUTOCorrDescriptors')
         calc_props = {k: v for k, v in inspect.getmembers(Descriptors, inspect.isfunction)
                       if not k.startswith('_') and k not in to_exclude}
 
-        df = pd.DataFrame({
-            'rdkit': [
+        return numpy.array([
                 [
                     v(Chem.MolFromSmiles(smi)) for k, v in calc_props.items()
                 ]
                 for smi in df['smiles']
-            ], })
-
-        if sanitize:
-            df.dropna(axis=axis, how='any', inplace=True)
-
-        return df
+            ])
+        # if sanitize:
+        #     df.dropna(axis=axis, how='any', inplace=True)
 
 
 class FeatureGenerator:
@@ -38,10 +34,8 @@ class FeatureGenerator:
             'iam': {'vector'},
             'requirements': ['smiles'],
             'transform':
-                lambda df: pd.DataFrame({
-                    'fingerprint': [numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
-                                    for smi in df['smiles']]
-                })
+                lambda df: numpy.array([numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
+                                    for smi in df['smiles']])
         },
         'rdkit': {
             'iam': {'vector'},
@@ -50,26 +44,18 @@ class FeatureGenerator:
         },
     }
 
-    def __init__(self, data_set: Dataset):
+    def __init__(self, data_set):
         self.data_set = data_set
 
-        # feature_name : sub data_frame of features associated with feature_name
-        self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items()
-                                       if self.requirements_fulfilled(k)}
+        # feature_name : sub data_frame of features associated with feature_name, lazy_init
+        self.__generatable_features = None
         self.__generated_features = {}
 
     def get_feature(self, feature_name):
-
-        # if feature_name not in FeatureGenerator.__featureList:
-        #     raise Exception('unknown feature %s' % feature_name)
-        #
         if not self.requirements_fulfilled(feature_name):
             raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
-
         if feature_name not in self.__generated_features:
-            self.__generated_features[feature_name] = numpy.array(
-                FeatureGenerator.__featureList[feature_name]['transform'](self.data_set.data)
-            )
+            self.__generated_features[feature_name] = FeatureGenerator.__featureList[feature_name]['transform'](self.data_set.data)
 
         return self.__generated_features[feature_name]
 
@@ -81,7 +67,12 @@ class FeatureGenerator:
             returns list of feature_names that can be offered and are acceptable
         :rtype: list[str]
         """
-        return [k for k in self.__generatable_features if FeatureGenerator.__featureList[k]['iam'] | acceptable_types]
+        return [k for k in self.generatable_features() if FeatureGenerator.__featureList[k]['iam'] & acceptable_types]
+
+    def generatable_features(self):
+        if self.__generatable_features is None:
+            self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items() if self.requirements_fulfilled(k)}
+        return self.__generatable_features
 
 
 """
