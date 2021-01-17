@@ -38,15 +38,18 @@ class ModelGenerator:
         acceptable_model_names = self.__modelList[problem_type].keys()
         # whitelist/blacklist
         if models_filter is not None:
-            acceptable_model_names = models_filter[1] if models_filter[0] == 'w' else acceptable_model_names - set(models_filter[1])
+            acceptable_model_names = models_filter[1] if models_filter[0] == 'w' \
+                else acceptable_model_names - set(models_filter[1])
 
         return self.generate_models(data_set, problem_type, acceptable_model_names)
 
     def generate_models(self, data_set, problem_type, model_names):
-        # todo maybe have multiple models/ different features/ only one output still let them keep some association for later
+        # todo maybe have multiple models/ different features/ only one output still let them keep some association for
+        #  later
         # todo implement have appropriate number of models generated based on accepted labels
         return [self.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
-                for model_name in model_names for acceptable_feature_name in data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]
+                for model_name in model_names for acceptable_feature_name in
+                data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]
 
     def generate_model(self, data_set, problem_type, model_name, feature_name):
         type_list = ModelGenerator.__modelList[problem_type]
@@ -87,4 +90,4 @@ class Model:
         return self.core.predict(data_set.get_feature(self.feature_name))
 
     def __str__(self):
-        return self.core.__str__()
+        return self.core.__str__().replace("()", "")
