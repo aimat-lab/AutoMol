@@ -1,4 +1,4 @@
-from automol.features import FeatureGenerator
+import numpy
 
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor # noqa
 from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier # noqa
@@ -30,30 +30,30 @@ class ModelGenerator:
                     __modelList[__modelTypes[modelType]][gvar] = gval
                     break
 
-    def __init__(self, feature_generator: FeatureGenerator):
-        self.feature_generator = feature_generator
+    def __init__(self):
+        print(self.__modelList)
+        pass
 
-    def get_models(self, problem_type, models_to_include=None, models_to_exclude=None):
-        available_models = self.__modelList[problem_type].keys()
-        if models_to_include is not None:
-            model_intersection = list(set(available_models).intersection(models_to_include))
-            return self.generate_models(problem_type, model_intersection)
-        if models_to_exclude is not None:
-            return self.generate_models(problem_type, available_models - models_to_exclude)
-        return self.generate_models(problem_type, available_models)
+    def generate_all_possible_models(self, data_set, problem_type, models_filter=None):
+        acceptable_model_names = self.__modelList[problem_type].keys()
+        # whitelist/blacklist
+        if models_filter is not None:
+            acceptable_model_names = models_filter[1] if models_filter[0] == 'w' else acceptable_model_names - set(models_filter[1])
 
-    def generate_models(self, problem_type, model_list):
-        return [a for model_name in model_list for a in self.generate_model(problem_type, model_name)]
+        return self.generate_models(data_set, problem_type, acceptable_model_names)
 
-    def generate_model(self, problem_type, model_name):
+    def generate_models(self, data_set, problem_type, model_names):
+        # todo maybe have multiple models/ different features/ only one output still let them keep some association for later
+        # todo implement have appropriate number of models generated based on accepted labels
+        return [self.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
+                for model_name in model_names for acceptable_feature_name in data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]
+
+    def generate_model(self, data_set, problem_type, model_name, feature_name):
         type_list = ModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
-        return [
-            ModelAbstraction(type_list[model_name](**hyperparameter_search(model_name, self.feature_generator)),
-                             self.feature_generator.get_feature(feat_name))
-            for feat_name in self.feature_generator.get_acceptable_features(self.acceptable_feature_types(model_name))
-        ]
+        return Model(type_list[model_name](**hyperparameter_search(model_name, data_set.feature_generator())),
+                     feature_name)
 
     def get_model_type(self, model_name):
         return [modelType for modelType in self.__modelTypes if model_name.endswith(modelType)][0]
@@ -64,23 +64,27 @@ class ModelGenerator:
     def acceptable_feature_types(self, model_name):
         return {
             'MLP': {'vector'},
-            'RandomForest': {'vector'},
-            # todo add rest
+            'Linear': {'vector'},
+            'GaussianProcess': {'vector'},
+            'GradientBoosting': {'vector'},
         }.get(self.get_model_prefix(model_name), set())
 
 
-class ModelAbstraction:
-    def __init__(self, model, feature):
-        self.model = model
-        self.feature = feature
+class Model:
 
-    def fit(self, y):
-        self.y = (y)
-        return
-        self.model.fit(self.feature, y)
+    def __init__(self, core, feature_name):
+        self.core = core
+        self.feature_name = feature_name
 
-    def predict(self, x):
-        return self.predict(x)
+    def fit(self, data_set, labels):
+        inputs = data_set.get_feature(self.feature_name)
+        labels = numpy.array(data_set[labels]).flatten()
+        # print(type(self.core))
+        # print(labels.shape, labels)
+        self.core.fit(inputs, labels)
+
+    def predict(self, data_set):
+        return self.core.predict(data_set.get_feature(self.feature_name))
 
     def __str__(self):
-        return '%s-%s' % (str(type(self.model)), self.feature)
+        return self.core.__str__()
