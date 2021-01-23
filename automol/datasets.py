@@ -7,6 +7,10 @@ import pandas
 from rdkit import Chem
 
 
+import pysftp
+import paramiko
+
+
 class Dataset(ABC):
 
     def __init__(self, data):
@@ -39,27 +43,37 @@ class Dataset(ABC):
         if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
             raise Exception("%s is not a valid class name" % class_name)
 
-        data = {}
+        config = paramiko.config.SSHConfig()
+        config.parse(open(os.path.expanduser('~/.ssh/config')))
+        conf = config.lookup('lsdf')
+        if spec['dataset_location'].startswith('lsdf:///'):
+            lsdf_dataset_path = spec['dataset_location'][len('lsdf:///'):]
+            # key = paramiko.RSAKey.from_private_key_file(conf['identityfile'][0])
+            with pysftp.Connection(host=conf['hostname'],
+                                   username=conf['user'], private_key=conf['identityfile'][0]) as sftp:
+                with sftp.cd(lsdf_dataset_path):
+                    print(sftp.listdir())
+                    # sftp.get()
+        else:
+            if not os.path.isdir(spec['dataset_location']):
+                raise Exception("path %s doesn't exist" % spec['dataset_location'])
 
-        if not os.path.isdir(spec['dataset_location']):
-            raise Exception("path %s doesn't exist" % spec['dataset_location'])
+            amount = spec.get('amount', -1)
+            for fn in glob.iglob(spec['dataset_location'] + '/*'):
+                if amount == 0:
+                    break
+                with open(fn) as f:
+                    text = f.read()
+                    try:
+                        data = {**data, **{k: data[k] + [v] if k in data else [v] for k, v in class_.parse(text).items()}}
+                        amount -= 1
+                    except Exception as e:
+                        with open("erroneous.txt", "w") as out:
+                            out.write(text)
+                            out.write(str(e))
+                        raise
 
-        amount = spec.get('amount', -1)
-        for fn in glob.iglob(spec['dataset_location'] + '/*'):
-            if amount == 0:
-                break
-            with open(fn) as f:
-                text = f.read()
-                try:
-                    data = {**data, **{k: data[k] + [v] if k in data else [v] for k, v in class_.parse(text).items()}}
-                    amount -= 1
-                except Exception as e:
-                    with open("erroneous.txt", "w") as out:
-                        out.write(text)
-                        out.write(str(e))
-                    raise
-
-        data = pandas.DataFrame(data, columns=data.keys())
+            data = pandas.DataFrame(data, columns=data.keys())
 
         return class_(data)
 
