@@ -1,9 +1,9 @@
 import numpy
 
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor # noqa
-from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier # noqa
-from sklearn.linear_model import LinearRegression, SGDClassifier # noqa
-from sklearn.neural_network import MLPRegressor, MLPClassifier # noqa
+from sklearn.ensemble import * # noqa
+from sklearn.gaussian_process import * # noqa
+from sklearn.linear_model import * # noqa
+from sklearn.neural_network import * # noqa
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error # noqa
 
@@ -47,11 +47,12 @@ class ModelGenerator:
         # todo maybe have multiple models/ different features/ only one output still let them keep some association for
         #  later
         # todo implement have appropriate number of models generated based on accepted labels
-        return [self.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
+        return [ModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
                 for model_name in model_names for acceptable_feature_name in
                 data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]
 
-    def generate_model(self, data_set, problem_type, model_name, feature_name):
+    @staticmethod
+    def generate_model(data_set, problem_type, model_name, feature_name):
         type_list = ModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
