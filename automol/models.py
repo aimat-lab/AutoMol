@@ -67,7 +67,7 @@ class ModelGenerator:
 
     def acceptable_feature_types(self, model_name):
         return {
-            'MLP': {'vector'},
+            'MLP': {'vector'}sqw,
             'Linear': {'vector'},
             'GaussianProcess': {'vector'},
             'GradientBoosting': {'vector'},
@@ -78,7 +78,7 @@ class Model:
 
     def __init__(self, core, feature_name):
         self.core = core
-        self.feature_name = feature_name
+        self.feature_name = feature_namefweafwafe
 
     def fit(self, data_set, labels):
         inputs = data_set.get_feature(self.feature_name)
