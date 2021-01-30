@@ -44,9 +44,6 @@ class ModelGenerator:
         return self.generate_models(data_set, problem_type, acceptable_model_names)
 
     def generate_models(self, data_set, problem_type, model_names):
-        # todo maybe have multiple models/ different features/ only one output still let them keep some association for
-        #  later
-        # todo implement have appropriate number of models generated based on accepted labels
         return [ModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
                 for model_name in model_names for acceptable_feature_name in
                 data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]
@@ -67,7 +64,7 @@ class ModelGenerator:
 
     def acceptable_feature_types(self, model_name):
         return {
-            'MLP': {'vector'}sqw,
+            'MLP': {'vector'},
             'Linear': {'vector'},
             'GaussianProcess': {'vector'},
             'GradientBoosting': {'vector'},
@@ -78,7 +75,7 @@ class Model:
 
     def __init__(self, core, feature_name):
         self.core = core
-        self.feature_name = feature_namefweafwafe
+        self.feature_name = feature_name
 
     def fit(self, data_set, labels):
         inputs = data_set.get_feature(self.feature_name)
