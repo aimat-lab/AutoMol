@@ -1,8 +1,6 @@
-#!/usr/bin/python
-
 import sys
 import getopt
-import os
+from automol.pipeline import Pipeline
 
 
 def main(argv):
@@ -21,13 +19,13 @@ def main(argv):
             sys.exit()
         elif opt in ("-c", "--cfile"):
             configfile = arg
-            print('Config file is "{}"'.format(configfile))
     if configfile:
-        print('Pipeline file exists: {}'.format(os.path.exists('automol/pipeline.py')))
+        pipeline = Pipeline(configfile)
+        pipeline.print_spec()
 
 
 def print_usage():
-    print('start_pipeline.py -c <configfile>')
+    print('python start_pipeline.py -c <configfile>')
 
 
 if __name__ == "__main__":
