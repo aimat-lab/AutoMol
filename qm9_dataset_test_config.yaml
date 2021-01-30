@@ -1,4 +1,4 @@
-dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat-mlflow/datasets/dsgdb9nsd'
+dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat/datasets/dsgdb9nsd'
 dataset_class: 'QM9'
 labels: ['homo']
 models_filter: ['w', ['GaussianProcessRegressor', 'MLPRegressor', 'LinearRegression', 'GradientBoostingRegressor']]
