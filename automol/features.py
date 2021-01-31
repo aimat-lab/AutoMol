@@ -1,6 +1,6 @@
 import inspect
 import numpy
-import pandas
+import pandas as pd
 
 import rdkit.Chem as Chem
 import rdkit.Chem.Descriptors as Descriptors
@@ -61,18 +61,6 @@ class FeatureGenerator:
         # feature_name : sub data_frame of features associated with feature_name, lazy_init
         self.__generatable_features = None
         self.__generated_features = {}
-        self.__custom_featureList = {}
-
-    def add_custom_features(self, custom_features:dict):
-        overlap = self.__featureList.keys() & custom_features.keys()
-        if overlap:
-            raise Exception(
-                'feature %s already exists, and can not be added as a new custom feature' % next(iter(overlap)))
-
-        self.__custom_featureList = {**self.__custom_featureList, **custom_features}
-
-    def clear_custom_features(self):
-        self.__custom_featureList = {}
 
     def get_feature(self, feature_name):
         # if it's represented in the dataset, return directly
@@ -85,8 +73,7 @@ class FeatureGenerator:
 
         # use the features transform to generate and cache the feature
         if feature_name not in self.__generated_features:
-            self.__generated_features[feature_name] =\
-                FeatureGenerator.__featureList[feature_name]['transform'](self.data_set)
+            self.__generated_features[feature_name] = FeatureGenerator.__featureList[feature_name]['transform'](self.data_set)
 
         # return the cached feature
         return self.__generated_features[feature_name]
@@ -103,8 +90,7 @@ class FeatureGenerator:
 
     def generatable_features(self):
         if self.__generatable_features is None:
-            self.__generatable_features =\
-                {k for k, v, in FeatureGenerator.__featureList.items() if self.requirements_fulfilled(k)}
+            self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items() if self.requirements_fulfilled(k)}
         return self.__generatable_features
 
 
