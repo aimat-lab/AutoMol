@@ -6,7 +6,6 @@ import os
 import pandas
 from rdkit import Chem
 
-
 import pysftp
 import paramiko
 
@@ -96,6 +95,10 @@ class Dataset(ABC):
     def parse(cls, text) -> dict:
         pass
 
+    @classmethod
+    def get_indices(cls) -> list:
+        pass
+
     def __iter__(self):
         return self.data.__iter__()
 
@@ -116,4 +119,9 @@ class QM9(Dataset):
             'U0'], r['U'], r['H'], r['G'], r['Cv'], = [float(a) for a in line2]
         r['smiles'] = Chem.MolToSmiles(Chem.MolFromSmiles(lines[3 + r['atom_count']].split('\t')[0], sanitize=True),
                                        isomericSmiles=False, canonical=True)
+        r['index'] = int(r['index'])
         return r
+
+    @classmethod
+    def get_indices(cls) -> list:
+        return ["{:06d}".format(index) for index in cls.data['index']]
