@@ -1,7 +1,7 @@
 import inspect
+import pickle
 import numpy
-import pandas as pd
-
+import os
 import rdkit.Chem as Chem
 import rdkit.Chem.Descriptors as Descriptors
 
@@ -19,11 +19,11 @@ class Rdkit:
                       if not k.startswith('_') and k not in to_exclude}
 
         return numpy.array([
-                [
-                    v(mol) for k, v in calc_props.items()
-                ]
-                for mol in ds.feature_generator().get_feature('molecules')
-            ])
+            [
+                v(mol) for k, v in calc_props.items()
+            ]
+            for mol in ds.feature_generator().get_feature('molecules')
+        ])
         # if sanitize:
         #     df.dropna(axis=axis, how='any', inplace=True)
 
@@ -40,7 +40,7 @@ class FeatureGenerator:
             'requirements': ['smiles'],
             'transform':
                 lambda ds: numpy.array([numpy.array(Chem.RDKFingerprint(mol)).astype(float)
-                                    for mol in ds.feature_generator().get_feature('molecules')])
+                                        for mol in ds.feature_generator().get_feature('molecules')])
         },
         'rdkit': {
             'iam': {'vector'},
@@ -71,9 +71,39 @@ class FeatureGenerator:
         if not self.requirements_fulfilled(feature_name):
             raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
 
+        # return already generated feature
+        if feature_name in self.__generated_features:
+            return self.__generated_features[feature_name]
+
+        # check if generated features are already cached
+        indices = self.data_set.get_indices()
+        cached = numpy.zeros(len(indices), dtype=bool)
+        data_set_location = 'data/dsgdb9nsd'
+        feature_dir = os.path.join(data_set_location, feature_name)
+        feature_path = os.path.join(feature_dir, feature_name + '.p')
+        cached_feature = {}
+        if os.path.exists(feature_path):
+            cached_feature = pickle.load(open(feature_path, "rb"))
+        for i, ind in enumerate(indices):
+            if ind in cached_feature:
+                cached[i] = True
+
         # use the features transform to generate and cache the feature
-        if feature_name not in self.__generated_features:
-            self.__generated_features[feature_name] = FeatureGenerator.__featureList[feature_name]['transform'](self.data_set)
+        if feature_name not in self.__generated_features and not all(cached):
+            self.__generated_features[feature_name] = \
+                FeatureGenerator.__featureList[feature_name]['transform'](self.data_set)
+
+        # use cached features
+        if all(cached):
+            self.__generated_features[feature_name] = numpy.array([v for v in cached_feature.values()])
+
+        # save features
+        if not all(cached):
+            os.makedirs(feature_dir)
+            to_save = {}
+            for i, f in enumerate(self.__generated_features[feature_name]):
+                to_save[indices[i]] = f
+            pickle.dump(to_save, open(feature_path, 'wb'))
 
         # return the cached feature
         return self.__generated_features[feature_name]
@@ -90,7 +120,8 @@ class FeatureGenerator:
 
     def generatable_features(self):
         if self.__generatable_features is None:
-            self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items() if self.requirements_fulfilled(k)}
+            self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items() if
+                                           self.requirements_fulfilled(k)}
         return self.__generatable_features
 
 
