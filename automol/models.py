@@ -44,9 +44,6 @@ class ModelGenerator:
         return self.generate_models(data_set, problem_type, acceptable_model_names)
 
     def generate_models(self, data_set, problem_type, model_names):
-        # todo maybe have multiple models/ different features/ only one output still let them keep some association for
-        #  later
-        # todo implement have appropriate number of models generated based on accepted labels
         return [ModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
                 for model_name in model_names for acceptable_feature_name in
                 data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]

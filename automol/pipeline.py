@@ -1,6 +1,11 @@
 from automol.datasets import Dataset
 from automol.models import ModelGenerator
+from automol.features import FeatureGenerator
+
 import yaml
+import requests
+import numpy
+
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import mlflow
 
@@ -17,9 +22,12 @@ class Pipeline:
         self.model_generator = ModelGenerator()
         self.models = []
 
+        self.custom_features = self.parse_custom_features(self.spec['custom_features'])
+        # todo, model generator takes feature list as parameter and uses that feature list to generate additional models
+        FeatureGenerator.__featureList |= self.custom_features
+
     def train(self, test_size=0.25):
         mlflow.sklearn.autolog()
-
         index_split = int((1. - test_size) * self.data_set.data.shape[0])
         train, test = self.data_set.split(index_split)
 
@@ -44,6 +52,24 @@ class Pipeline:
             'mse': mean_squared_error(y_test, pred),
             'r2s': r2_score(y_test, pred),
         }
+
+    @staticmethod
+    def parse_custom_features(custom_features):
+        r = {}
+        for k, v in custom_features.items():
+            ns = {}
+            exec(requests.get(v['file_link']).text, ns)
+
+            def a(data_set, func=ns[v['function_name']]):
+                data = numpy([data_set.feature_generator().get_feature(param_name)
+                              for param_name in v['input']]).transpose()
+                return numpy.array([func(*data[i]) for i in data_set.data.index])
+            r[k] = {
+                'iam': set(v['iam']),
+                'requirements': v['input'],
+                'transform': a
+            }
+        return r
 
     def print_spec(self):
         print(yaml.dump(self.spec))

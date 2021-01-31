@@ -1,6 +1,5 @@
 import inspect
 import numpy
-import pandas as pd
 
 import rdkit.Chem as Chem
 import rdkit.Chem.Descriptors as Descriptors
@@ -9,7 +8,7 @@ import rdkit.Chem.Descriptors as Descriptors
 class Rdkit:
 
     @staticmethod
-    def produce(df: pd.DataFrame,
+    def produce(ds,
                 to_exclude: list = None,
                 sanitize: bool = True,
                 axis: int = 0):
@@ -20,9 +19,9 @@ class Rdkit:
 
         return numpy.array([
                 [
-                    v(Chem.MolFromSmiles(smi)) for k, v in calc_props.items()
+                    v(mol) for k, v in calc_props.items()
                 ]
-                for smi in df['smiles']
+                for mol in ds.feature_generator().get_feature('molecules')
             ])
         # if sanitize:
         #     df.dropna(axis=axis, how='any', inplace=True)
@@ -30,18 +29,29 @@ class Rdkit:
 
 class FeatureGenerator:
     __featureList = {
+        'molecules': {
+            'iam': {'abstract'},
+            'requirements': ['smiles'],
+            'transform': lambda ds: numpy.array([Chem.MolFromSmiles(smi) for smi in ds.data['smiles']])
+        },
         'fingerprint': {
             'iam': {'vector'},
             'requirements': ['smiles'],
             'transform':
-                lambda df: numpy.array([numpy.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smi))).astype(float)
-                                    for smi in df['smiles']])
+                lambda ds: numpy.array([numpy.array(Chem.RDKFingerprint(mol)).astype(float)
+                                        for mol in ds.feature_generator().get_feature('molecules')])
         },
         'rdkit': {
             'iam': {'vector'},
             'requirements': ['smiles'],
-            'transform': lambda df: Rdkit.produce(df)
+            'transform': lambda ds: Rdkit.produce(ds)
         },
+        'coulomb_mat_eigen': {
+            'iam': {'vector'},
+            'requirements': ['smiles'],
+            'transform': lambda ds: numpy.array([Chem.rdMolDescriptors.CalcCoulombMat(mol)
+                                                 for mol in ds.feature_generator().get_feature('molecules')])
+        }
     }
 
     def __init__(self, data_set):
@@ -52,11 +62,20 @@ class FeatureGenerator:
         self.__generated_features = {}
 
     def get_feature(self, feature_name):
+        # if it's represented in the dataset, return directly
+        if feature_name in self.data_set:
+            return self.data_set[feature_name]
+
+        # if dataset doesn't meet requirements, exception
         if not self.requirements_fulfilled(feature_name):
             raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
-        if feature_name not in self.__generated_features:
-            self.__generated_features[feature_name] = FeatureGenerator.__featureList[feature_name]['transform'](self.data_set.data)
 
+        # use the features transform to generate and cache the feature
+        if feature_name not in self.__generated_features:
+            self.__generated_features[feature_name] = FeatureGenerator.__featureList[feature_name]['transform'](
+                    self.data_set)
+
+        # return the cached feature
         return self.__generated_features[feature_name]
 
     def requirements_fulfilled(self, feature_name):
@@ -71,7 +90,8 @@ class FeatureGenerator:
 
     def generatable_features(self):
         if self.__generatable_features is None:
-            self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items() if self.requirements_fulfilled(k)}
+            self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items()
+                                           if self.requirements_fulfilled(k)}
         return self.__generatable_features
 
 
