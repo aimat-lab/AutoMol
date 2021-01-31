@@ -36,7 +36,8 @@ class ModelGenerator:
 
     def generate_all_possible_models(self, data_set, problem_type, models_filter=None):
         acceptable_model_names = self.__modelList[problem_type].keys()
-        # whitelist/blacklist
+
+        # w=whitelist/b=blacklist
         if models_filter is not None:
             acceptable_model_names = models_filter[1] if models_filter[0] == 'w' \
                 else acceptable_model_names - set(models_filter[1])

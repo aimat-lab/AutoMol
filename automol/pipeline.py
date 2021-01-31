@@ -23,8 +23,7 @@ class Pipeline:
         self.models = []
 
         self.custom_features = self.parse_custom_features(self.spec['custom_features'])
-        # todo, model generator takes feature list as parameter and uses that feature list to generate additional models
-        FeatureGenerator.__featureList |= self.custom_features
+        self.data_set.feature_generator().add_custom_features(self.custom_features)
 
     def train(self, test_size=0.25):
         mlflow.sklearn.autolog()
@@ -61,7 +60,8 @@ class Pipeline:
             exec(requests.get(v['file_link']).text, ns)
 
             def a(data_set, func=ns[v['function_name']]):
-                data = numpy([data_set.feature_generator().get_feature(param_name) for param_name in v['input']]).transpose()
+                data = numpy.array(
+                    [data_set.feature_generator().get_feature(param_name) for param_name in v['input']]).transpose()
                 return numpy.array([func(*data[i]) for i in data_set.data.index])
             r[k] = {
                 'iam': set(v['iam']),
