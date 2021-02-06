@@ -21,19 +21,19 @@ class Dataset(ABC):
 
     def feature_generator(self):
         if self.__featureGenerator is None:
-            self.__featureGenerator = FeatureGenerator(self)
+            self.__featureGenerator = FeatureGenerator()
         return self.__featureGenerator
 
     def get_feature(self, feature_name):
         """
-        wrapper on getting feature generator
+        wrapper on getting feature from generator
         :param feature_name:
         :return:
         """
-        return self.feature_generator().get_feature(feature_name)
+        return self.feature_generator().get_feature(self, feature_name)
 
-    def split(self, split_right):
-        return Dataset(self.data[0: split_right]), Dataset(self.data[split_right:])
+    def get_acceptable_features(self, acceptable_types):
+        return self.feature_generator().get_acceptable_features(self, acceptable_types)
 
     @classmethod
     def from_spec(cls, spec):
@@ -125,3 +125,30 @@ class QM9(Dataset):
     @classmethod
     def get_indices(cls) -> list:
         return ["{:06d}".format(index) for index in cls.data['index']]
+
+
+class DataSplit:
+
+    @staticmethod
+    def invoke(data: pandas.DataFrame, method: str, param):
+        if hasattr(DataSplit, method):
+            return getattr(DataSplit, method)(data, param)
+        raise TypeError('method %s is illegal' % method)
+
+    @staticmethod
+    def k_fold(data, k):
+        """
+        k fold split iterator that doesn't copy data
+        doesn't support mutability of datasets
+        :param data
+        :param k: k-fold
+        :return: generator for tuples (valid 1/k, train (k-1)/k)
+        """
+        data = data.sample(frac=1)
+        inc = len(data.index) / k
+        return ((next_valid, data.drop(next_valid.index)) for next_valid in
+                (data.index[round(i * inc): round((i+1) * inc)] for i in range(k)))
+
+    @staticmethod
+    def split(data, split_sep):
+        return (data[0: split_sep], data[split_sep:]),

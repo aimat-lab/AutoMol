@@ -22,7 +22,7 @@ class Rdkit:
             [
                 v(mol) for k, v in calc_props.items()
             ]
-            for mol in ds.feature_generator().get_feature('molecules')
+            for mol in ds.get_feature('molecules')
         ])
         # if sanitize:
         #     df.dropna(axis=axis, how='any', inplace=True)
@@ -40,7 +40,7 @@ class FeatureGenerator:
             'requirements': ['smiles'],
             'transform':
                 lambda ds: numpy.array([numpy.array(Chem.RDKFingerprint(mol)).astype(float)
-                                        for mol in ds.feature_generator().get_feature('molecules')])
+                                        for mol in ds.get_feature('molecules')])
         },
         'rdkit': {
             'iam': {'vector'},
@@ -51,21 +51,19 @@ class FeatureGenerator:
             'iam': {'vector'},
             'requirements': ['smiles'],
             'transform': lambda ds: numpy.array([Chem.rdMolDescriptors.CalcCoulombMat(mol)
-                                                 for mol in ds.feature_generator().get_feature('molecules')])
+                                                 for mol in ds.get_feature('molecules')])
         }
     }
 
-    def __init__(self, data_set):
-        self.data_set = data_set
-
+    def __init__(self):
         # feature_name : sub data_frame of features associated with feature_name, lazy_init
         self.__generatable_features = None
         self.__generated_features = {}
 
-    def get_feature(self, feature_name):
+    def get_feature(self, data_set, feature_name):
         # if it's represented in the dataset, return directly
-        if feature_name in self.data_set:
-            return self.data_set[feature_name]
+        if feature_name in data_set:
+            return data_set[feature_name]
 
         # if dataset doesn't meet requirements, exception
         if not self.requirements_fulfilled(feature_name):
@@ -89,6 +87,9 @@ class FeatureGenerator:
                 cached[i] = True
 
         # use the features transform to generate and cache the feature
+        if feature_name not in self.__generated_features:
+            self.__generated_features[feature_name] = FeatureGenerator.__featureList[feature_name]['transform'](
+                data_set)
         if feature_name not in self.__generated_features and not all(cached):
             self.__generated_features[feature_name] = \
                 FeatureGenerator.__featureList[feature_name]['transform'](self.data_set)
@@ -108,20 +109,21 @@ class FeatureGenerator:
         # return the cached feature
         return self.__generated_features[feature_name]
 
-    def requirements_fulfilled(self, feature_name):
-        return not any(req not in self.data_set for req in FeatureGenerator.__featureList[feature_name]['requirements'])
+    def requirements_fulfilled(self, data_set, feature_name):
+        return not any(req not in data_set for req in FeatureGenerator.__featureList[feature_name]['requirements'])
 
-    def get_acceptable_features(self, acceptable_types):
+    def get_acceptable_features(self, data_set, acceptable_types):
         """
             returns list of feature_names that can be offered and are acceptable
         :rtype: list[str]
         """
-        return [k for k in self.generatable_features() if FeatureGenerator.__featureList[k]['iam'] & acceptable_types]
+        return [k for k in self.generatable_features(data_set) if
+                FeatureGenerator.__featureList[k]['iam'] & acceptable_types]
 
-    def generatable_features(self):
+    def generatable_features(self, data_set):
         if self.__generatable_features is None:
             self.__generatable_features = {k for k, v, in FeatureGenerator.__featureList.items() if
-                                           self.requirements_fulfilled(k)}
+                                           self.requirements_fulfilled(data_set, k)}
         return self.__generatable_features
 
 

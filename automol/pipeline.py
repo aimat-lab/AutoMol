@@ -1,10 +1,10 @@
-from automol.datasets import Dataset
+from automol.datasets import Dataset, DataSplit
 from automol.models import ModelGenerator
-from automol.features import FeatureGenerator
 
 import yaml
 import requests
 import numpy
+import pandas
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import mlflow
@@ -25,17 +25,48 @@ class Pipeline:
         self.custom_features = self.parse_custom_features(self.spec['custom_features'])
         self.data_set.feature_generator().add_custom_features(self.custom_features)
 
-    def train(self, test_size=0.25):
+    def train(self):
         mlflow.sklearn.autolog()
-        index_split = int((1. - test_size) * self.data_set.data.shape[0])
-        train, test = self.data_set.split(index_split)
+        split_params = self.spec['dataset_split']['params']
 
-        for model in self.model_generator.generate_all_possible_models(
-                self.data_set, self.spec['problem'], self.spec['models_filter']):
-            self.models.append(model)
-            with mlflow.start_run():
-                model.fit(train, self.spec['labels'])
-            self.print_statistics(model, test)
+        # creates the generator for the ith nested level of the iteration and progresses it
+        def i_level(i):
+            split_gens[i] = iter(DataSplit.invoke(self.data_set if i == 0 else sets[i],
+                                                  self.spec['dataset_split']['method'],
+                                                  split_params[i]))
+            progr(i)
+
+        # progresses the ith nested level by 1 iteration
+        def progr(i):
+            sets[i], sets[i + 1] = next(split_gens[i])
+
+        split_gens = [(i for i in ())] * len(split_params)
+        # k nested levels -> k splits -> (k + 1) sets
+        sets = [pandas.DataFrame()] * (len(split_params) + 1)
+        for i in range(len(split_params)):
+            i_level(i)
+
+        while split_gens:
+
+            # FUTURE: might implement something actually useful here, like hyperparam search
+            # rn: just prints the stats evaluated on each lower level set, uses topmost set to fit
+            for model in self.model_generator.generate_all_possible_models(
+                    self.data_set, self.spec['problem'], self.spec['models_filter']):
+                self.models.append(model)
+                with mlflow.start_run():
+                    model.fit(sets[-1], self.spec['labels'])
+                for i in range(len(sets) - 1):
+                    print('stats on layer %d split:' % i)
+                    self.print_statistics(model, sets[i])
+
+            while True:
+                try:
+                    progr(len(split_gens) - 1)
+                except StopIteration:
+                    del split_gens[-1]
+                # all levels have been generated
+                if len(split_gens) == len(split_params):
+                    break
 
     def print_statistics(self, model, test):
         stats = self.get_statistics(model, test)
@@ -63,6 +94,7 @@ class Pipeline:
                 data = numpy.array(
                     [data_set.feature_generator().get_feature(param_name) for param_name in v['input']]).transpose()
                 return numpy.array([func(*data[i]) for i in data_set.data.index])
+
             r[k] = {
                 'iam': set(v['iam']),
                 'requirements': v['input'],
@@ -72,4 +104,3 @@ class Pipeline:
 
     def print_spec(self):
         print(yaml.dump(self.spec))
-
