@@ -1,4 +1,5 @@
 import numpy
+import inspect
 
 from sklearn.ensemble import * # noqa
 from sklearn.gaussian_process import * # noqa
@@ -22,7 +23,7 @@ class ModelGenerator:
     __modelTypes = {'Regressor': 'regression', 'Regression': 'regression', 'Classifier': 'classification'}
 
     for gvar, gval in globals().items():
-        if issubclass(type(gval), type):
+        if inspect.isclass(gval):
             for modelType in __modelTypes:
                 if gvar.endswith(modelType):
                     if __modelTypes[modelType] not in __modelList:
@@ -47,7 +48,7 @@ class ModelGenerator:
     def generate_models(self, data_set, problem_type, model_names):
         return [ModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
                 for model_name in model_names for acceptable_feature_name in
-                data_set.get_acceptable_features(self.acceptable_feature_types(model_name))]
+                data_set.feature_generator().get_acceptable_features(self.acceptable_feature_types(model_name))]
 
     @staticmethod
     def generate_model(data_set, problem_type, model_name, feature_name):
@@ -65,10 +66,10 @@ class ModelGenerator:
 
     def acceptable_feature_types(self, model_name):
         return {
-                'MLP': {'vector'},
-                'Linear': {'vector'},
-                'GaussianProcess': {'vector'},
-                'GradientBoosting': {'vector'},
+            'MLP': {'vector'},
+            'Linear': {'vector'},
+            'GaussianProcess': {'vector'},
+            'GradientBoosting': {'vector'},
         }.get(self.get_model_prefix(model_name), set())
 
 
