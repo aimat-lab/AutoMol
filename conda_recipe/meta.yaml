@@ -1,0 +1,27 @@
+package:
+    name: automol
+    version: 0.0.1
+
+source:
+    path: ../
+
+build:
+  noarch: python
+  number: 0
+  script: python -m pip install --no-deps --ignore-installed .
+
+requirements:
+    build:
+        - python [py3k]
+        - setuptools
+        - numpy
+        - pandas
+        - scikit-learn
+        - rdkit
+    run:
+        - python [py3k]
+        - setuptools
+        - numpy
+        - pandas
+        - scikit-learn
+        - rdkit
