@@ -25,7 +25,6 @@ class Pipeline:
         self.data_set.feature_generator().add_custom_features(self.custom_features)
 
     def train(self, test_size=0.25):
-        print("test")
         mlflow.sklearn.autolog()
         index_split = int((1. - test_size) * self.data_set.data.shape[0])
         train, test = self.data_set.split(index_split)
