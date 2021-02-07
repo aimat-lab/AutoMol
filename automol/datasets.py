@@ -1,6 +1,6 @@
 import glob
 from abc import ABC
-from automol.features import FeatureGenerator
+from automol.features.features import FeatureGenerator
 
 import os
 import pandas
@@ -21,25 +21,25 @@ class Dataset(ABC):
 
     def feature_generator(self):
         if self.__featureGenerator is None:
-            self.__featureGenerator = FeatureGenerator()
+            self.__featureGenerator = FeatureGenerator(self)
         return self.__featureGenerator
 
     def get_feature(self, feature_name):
         """
-        wrapper on getting feature from generator
+        wrapper on getting feature generator
         :param feature_name:
         :return:
         """
-        return self.feature_generator().get_feature(self, feature_name)
+        return self.feature_generator().get_feature(feature_name)
 
-    def get_acceptable_features(self, acceptable_types):
-        return self.feature_generator().get_acceptable_features(self, acceptable_types)
+    def split(self, split_right):
+        return Dataset(self.data[0: split_right]), Dataset(self.data[split_right:])
 
     @classmethod
     def from_spec(cls, spec):
         class_name = spec['dataset_class']
         class_ = globals().get(class_name)
-        if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
+        if class_ is None or not issubclass(class_, cls):
             raise Exception("%s is not a valid class name" % class_name)
 
         data = {}
@@ -95,9 +95,8 @@ class Dataset(ABC):
     def parse(cls, text) -> dict:
         pass
 
-    @classmethod
-    def get_indices(cls) -> list:
-        pass
+    def get_indices(self) -> list:
+        return self.data.index
 
     def __iter__(self):
         return self.data.__iter__()
@@ -122,33 +121,5 @@ class QM9(Dataset):
         r['index'] = int(r['index'])
         return r
 
-    @classmethod
-    def get_indices(cls) -> list:
-        return ["{:06d}".format(index) for index in cls.data['index']]
-
-
-class DataSplit:
-
-    @staticmethod
-    def invoke(data: pandas.DataFrame, method: str, param):
-        if hasattr(DataSplit, method):
-            return getattr(DataSplit, method)(data, param)
-        raise TypeError('method %s is illegal' % method)
-
-    @staticmethod
-    def k_fold(data, k):
-        """
-        k fold split iterator that doesn't copy data
-        doesn't support mutability of datasets
-        :param data
-        :param k: k-fold
-        :return: generator for tuples (valid 1/k, train (k-1)/k)
-        """
-        data = data.sample(frac=1)
-        inc = len(data.index) / k
-        return ((next_valid, data.drop(next_valid.index)) for next_valid in
-                (data.index[round(i * inc): round((i+1) * inc)] for i in range(k)))
-
-    @staticmethod
-    def split(data, split_sep):
-        return (data[0: split_sep], data[split_sep:]),
+    def get_indices(self) -> list:
+        return ["{:06d}".format(index) for index in self.data['index']]
