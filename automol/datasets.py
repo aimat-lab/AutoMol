@@ -1,9 +1,9 @@
 import glob
 from abc import ABC
-from automol.features.features import FeatureGenerator
+from automol.features.features import FeatureGenerator, Features
 
 import os
-import pandas
+import pandas as pd
 from rdkit import Chem
 
 import pysftp
@@ -12,10 +12,10 @@ import paramiko
 
 class Dataset(ABC):
 
-    def __init__(self, data):
-        self.data = data
-        if self.data.empty:
-            raise Exception("dataset empty")
+    def __init__(self, data_Set: pd.Dataframe):
+        assert not data_Set.empty, "The data set is empty."
+        self.data_Set = data_Set
+        self.features = Features(data_Set)
         # cached feature generator
         self.__featureGenerator = None
 
@@ -87,7 +87,7 @@ class Dataset(ABC):
                     text = f.read()
                 parse_and_catch(text)
 
-        data = pandas.DataFrame(data, columns=data.keys())
+        data = pd.DataFrame(data, columns=data.keys())
 
         return class_(data)
 
