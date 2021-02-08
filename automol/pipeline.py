@@ -69,35 +69,7 @@ class Pipeline:
             }
         return r
 
-    @staticmethod
-    def parse_custom_features2(custom_features):
-        r = {}
-        for k, v in custom_features.items():
-            file_link = v["file_link"]
-            try:
-                response = requests.get(file_link)
-                response.raise_for_status()
-            except requests.exceptions.HTTPError as errh:
-                print(f"Http Error: {errh}")
-            except requests.exceptions.ConnectionError as errc:
-                print(f"Error Connecting: {errc}")
-            except requests.exceptions.Timeout as errt:
-                print(f"Timeout Error: {errt}")
-            except requests.exceptions.RequestException as err:
-                print(f"General error {err}")
-            response_text = response.text
 
-            def a(data_set, func=ns[v['function_name']]):
-                data = numpy.array(
-                    [data_set.feature_generator().get_feature(param_name) for param_name in v['input']]).transpose()
-                return numpy.array([func(*data[i]) for i in data_set.data.index])
-
-            r[k] = {
-                'iam': set(v['iam']),
-                'requirements': v['input'],
-                'transform': a
-            }
-        return r
 
     def print_spec(self):
         print(yaml.dump(self.spec))

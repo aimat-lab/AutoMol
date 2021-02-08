@@ -33,7 +33,6 @@ class ModelGenerator:
 
     def __init__(self):
         print(self.__modelList)
-        pass
 
     def generate_all_possible_models(self, data_set, problem_type, models_filter=None):
         acceptable_model_names = self.__modelList[problem_type].keys()
