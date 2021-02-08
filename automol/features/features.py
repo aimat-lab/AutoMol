@@ -59,6 +59,9 @@ class Features:
         return parsed_features
 
     def get_feature(self, data_set: pd.DataFrame, feature_name: str):
+        # ToDo add option to load features from disk
+        # ToDo check feature requirements dynamically.
+        # ToDo think how to better incorporate the feature type info for creating features
         # if it's represented in the dataset, return directly
         if feature_name in data_set:
             return data_set[feature_name]
