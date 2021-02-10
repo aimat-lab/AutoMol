@@ -18,24 +18,23 @@ logger = logging.getLogger(__name__)
 
 class Features:
 
-    def __init__(self, custom_features: Optional[Dict]):
-        self.feature_generators = Features.get_feature_generators()
+    def __init__(self, data_set: pd.DataFrame, custom_features: Optional[Dict]):
+        self.possible_feature_generators = self.get_possible_feature_generators()
         if custom_features:
             self.parse_custom_features(custom_features=custom_features)
+        self.data_set = data_set
+        self.data = data_set.data
         self.generated_features = dict()
 
-    @staticmethod
-    def get_feature_generators() -> List[FeatureGenerator]:
+    def get_possible_feature_generators(self) -> List[FeatureGenerator]:
         possible_feature_generators = list()
         for feature_generator in _known_feature_generators:
-            possible_feature_generators.append(feature_generator.create_feature_generator())
-            logger.info(f'Created Feature Generator {feature_generator.__name__}')
+            feature_generator_object = feature_generator.create_feature_generator()
+            if feature_generator_object.generator_data.requirements in self.data:
+                possible_feature_generators.append(feature_generator_object)
+                logger.info(f'Created Feature Generator {feature_generator.__name__} for dataset'
+                            f'{self.data_set.__name}')
         return possible_feature_generators
-
-    def get_acceptable_feature_generators(self, acceptable_feature_type: str):
-        acceptable_feature_generators = [feature_generator for feature_generator in self.possible_feature_generators if
-                                         feature_generator.generator_data.feature_type == acceptable_feature_type]
-        return acceptable_feature_generators
 
     def parse_custom_features(self, custom_features):
         parsed_features = dict()
@@ -55,23 +54,47 @@ class Features:
                                                               feature_type=feature_content['type'],
                                                               requirements=feature_content['requirements'])
             custom_feature_generator.transform = global_custom_namespace[feature_content['function_name']]
-            self.feature_generators.append(custom_feature_generator)
+            if custom_feature_generator.generator_data.requirements in self.data:
+                self.possible_feature_generators.append(custom_feature_generator)
+            else:
+                logger.info(f"Custom feature {feature_name} is not compatible with the data_class"
+                            f"{self.data_set.__name__}")
         return parsed_features
 
-    def get_feature(self, data_set: pd.DataFrame, feature_name: str):
+    def check_requested_feature(self, feature_name: str) -> bool:
+        match = False
+        for feature_generator in self.possible_feature_generators:
+            if feature_generator.generator_data.feature_name == feature_name:
+                match = True
+        return match
+
+    def get_features_from_type(self, feature_type: str):
+        feature_generators_from_type = list()
+        for feature_generator in self.possible_feature_generators:
+            if feature_generator.generator_data.feature_type == feature_type:
+                feature_generators_from_type.append(feature_generator)
+        return feature_generators_from_type
+
+    def get_feature(self, feature_type: Optional[str], feature_name: Optional[str]):
         # ToDo add option to load features from disk
-        # ToDo check feature requirements dynamically.
-        # ToDo think how to better incorporate the feature type info for creating features
+        # check if requested feature is supported from the dataset
+        if feature_name:
+            if not self.check_requested_feature(feature_name=feature_name):
+                logger.info(f"Requested feature {feature_name} is not compatible for the dataset"
+                            f"{self.data_set.__name__}. Skip this feature.")
+                return None
+        else:
+            featur_generators_from_type = self.get_features_from_type(feature_type=feature_type)
         # if it's represented in the dataset, return directly
-        if feature_name in data_set:
-            return data_set[feature_name]
+        if feature_name in self.data:
+            return self.data[feature_name]
 
         # return already generated feature
         if feature_name in self.generated_features:
             return self.generated_features[feature_name]
 
         # check if generated features are already cached
-        indices = data_set.get_indices()
+        indices = self.data.get_indices()
         cached = np.zeros(len(indices), dtype=bool)
         data_set_location = 'data/dsgdb9nsd'
         feature_dir = os.path.join(data_set_location, feature_name)
