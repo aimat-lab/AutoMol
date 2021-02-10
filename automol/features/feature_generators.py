@@ -18,6 +18,9 @@ class GeneratorData:
 
 class FeatureGenerator:
 
+    def __init__(self):
+        ...
+
     @abstractmethod
     def transform(self, data_set: pd.DataFrame):
         ...
@@ -30,6 +33,7 @@ class FeatureGenerator:
 class MoleculeFeatureGenerator(FeatureGenerator):
 
     def __init__(self):
+        super().__init__()
         self.generator_data = GeneratorData(feature_name='molecule', feature_type='molecules', requirements=["smiles"])
 
     def transform(self, data_set: pd.DataFrame) -> np.array:

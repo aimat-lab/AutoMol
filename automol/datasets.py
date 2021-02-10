@@ -1,5 +1,7 @@
 import glob
 from abc import ABC
+from typing import Optional, Dict
+
 from automol.features.features import FeatureGenerator, Features
 
 import os
@@ -12,25 +14,13 @@ import paramiko
 
 class Dataset(ABC):
 
-    def __init__(self, data_Set: pd.Dataframe):
-        assert not data_Set.empty, "The data set is empty."
-        self.data_Set = data_Set
-        self.features = Features(data_Set)
-        # cached feature generator
-        self.__featureGenerator = None
+    def __init__(self, data: pd.Dataframe, custom_features: Optional[Dict] = None):
+        assert not data.empty, "The data set is empty. Please select the correct path to the data."
+        self.data = data
+        self.features = Features(custom_features)
 
-    def feature_generator(self):
-        if self.__featureGenerator is None:
-            self.__featureGenerator = FeatureGenerator(self)
-        return self.__featureGenerator
-
-    def get_feature(self, feature_name):
-        """
-        wrapper on getting feature generator
-        :param feature_name:
-        :return:
-        """
-        return self.feature_generator().get_feature(feature_name)
+    def get_feature(self, feature_type: str, feature_name: Optional[str] = None):
+        return self.features.get_feature(feature_name=feature_name, feature_type=feature_type)
 
     def split(self, split_right):
         return Dataset(self.data[0: split_right]), Dataset(self.data[split_right:])
@@ -88,8 +78,10 @@ class Dataset(ABC):
                 parse_and_catch(text)
 
         data = pd.DataFrame(data, columns=data.keys())
-
-        return class_(data)
+        if 'custom_features' in spec:
+            return class_(data, spec['custom_features'])
+        else:
+            return class_(data)
 
     @classmethod
     def parse(cls, text) -> dict:
