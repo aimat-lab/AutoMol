@@ -11,5 +11,5 @@ dataset_split:
   method: k_fold
   params: [10, 5]
 labels: ['homo']
-models_filter: ['w', ['GaussianProcessRegressor', 'MLPRegressor', 'LinearRegression', 'GradientBoostingRegressor']]
+models_filter: ['w', ['sklearn.GaussianProcessRegressor', 'sklearn.MLPRegressor', 'sklearn.LinearRegression', 'sklearn.GradientBoostingRegressor']]
 problem: regression

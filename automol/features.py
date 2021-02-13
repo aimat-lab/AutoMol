@@ -66,7 +66,7 @@ class FeatureGenerator:
             return data_set[feature_name]
 
         # if dataset doesn't meet requirements, exception
-        if not self.requirements_fulfilled(feature_name):
+        if not self.requirements_fulfilled(data_set, feature_name):
             raise Exception('requirements for feature %s not satisfied by data set' % feature_name)
 
         # return already generated feature
@@ -74,7 +74,7 @@ class FeatureGenerator:
             return self.__generated_features[feature_name]
 
         # check if generated features are already cached
-        indices = self.data_set.get_indices()
+        indices = data_set.get_indices()
         cached = numpy.zeros(len(indices), dtype=bool)
         data_set_location = 'data/dsgdb9nsd'
         feature_dir = os.path.join(data_set_location, feature_name)
@@ -92,7 +92,7 @@ class FeatureGenerator:
                 data_set)
         if feature_name not in self.__generated_features and not all(cached):
             self.__generated_features[feature_name] = \
-                FeatureGenerator.__featureList[feature_name]['transform'](self.data_set)
+                FeatureGenerator.__featureList[feature_name]['transform'](data_set)
 
         # use cached features
         if all(cached):

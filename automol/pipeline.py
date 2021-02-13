@@ -31,22 +31,37 @@ class Pipeline:
 
         # creates the generator for the ith nested level of the iteration and progresses it
         def i_level(i):
-            split_gens[i] = iter(DataSplit.invoke(self.data_set if i == 0 else sets[i],
-                                                  self.spec['dataset_split']['method'],
-                                                  split_params[i]))
-            progr(i)
+            split_gen = iter(DataSplit.invoke(self.data_set if i == 0 else sets[i],
+                                              self.spec['dataset_split']['method'],
+                                              split_params[i]))
+            if len(split_gens) > i:
+                raise Exception('illegal')
+            elif len(split_gens) == i:
+                split_gens.append(split_gen)
+            else:
+                split_gens[i] = split_gen
 
         # progresses the ith nested level by 1 iteration
         def progr(i):
             sets[i], sets[i + 1] = next(split_gens[i])
 
-        split_gens = [(i for i in ())] * len(split_params)
+        split_gens = []
         # k nested levels -> k splits -> (k + 1) sets
         sets = [pandas.DataFrame()] * (len(split_params) + 1)
-        for i in range(len(split_params)):
-            i_level(i)
+        i_level(0)
 
         while split_gens:
+            while split_gens:
+                try:
+                    progr(len(split_gens) - 1)
+                    # all levels have been generated
+                    if len(split_gens) == len(split_params):
+                        break
+                    else:
+                        # generates the next level based on the new split
+                        i_level(len(split_gens))
+                except StopIteration:
+                    del split_gens[-1]
 
             # FUTURE: might implement something actually useful here, like hyperparam search
             # rn: just prints the stats evaluated on each lower level set, uses topmost set to fit
@@ -58,15 +73,6 @@ class Pipeline:
                 for i in range(len(sets) - 1):
                     print('stats on layer %d split:' % i)
                     self.print_statistics(model, sets[i])
-
-            while True:
-                try:
-                    progr(len(split_gens) - 1)
-                except StopIteration:
-                    del split_gens[-1]
-                # all levels have been generated
-                if len(split_gens) == len(split_params):
-                    break
 
     def print_statistics(self, model, test):
         stats = self.get_statistics(model, test)
