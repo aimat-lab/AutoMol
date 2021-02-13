@@ -1,4 +1,5 @@
-import numpy
+from typing import Set
+from automol.models import Model
 
 from sklearn.ensemble import * # noqa
 from sklearn.gaussian_process import * # noqa
@@ -31,30 +32,30 @@ class SklearnModelGenerator:
                     break
 
     def __init__(self):
-        print(self.__modelList)
+        pass
 
     def generate_all_possible_models(self, data_set, problem_type, models_filter=None):
         acceptable_model_names = self.__modelList[problem_type].keys()
 
-        # w=whitelist/b=blacklist
         if models_filter is not None:
-            acceptable_model_names = models_filter[1] if models_filter[0] == 'w' \
-                else acceptable_model_names - set(models_filter[1])
+            acceptable_model_names = acceptable_model_names & set(models_filter['model_names'])\
+                if models_filter['whitelist']\
+                else acceptable_model_names - set(models_filter['model_names'])
 
         return self.generate_models(data_set, problem_type, acceptable_model_names)
 
     def generate_models(self, data_set, problem_type, model_names):
-        return [SklearnModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_name)
-                for model_name in model_names for acceptable_feature_name in
-                data_set.get_acceptable_features(self.acceptable_feature_types(model_name))]
+        return [SklearnModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_gen)
+                for model_name in model_names for acceptable_feature_gen in
+                data_set.get_acceptable_feature_gens(self.acceptable_feature_types(model_name))]
 
     @staticmethod
-    def generate_model(data_set, problem_type, model_name, feature_name):
+    def generate_model(data_set, problem_type, model_name, feature_gen):
         type_list = SklearnModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
         return Model(type_list[model_name](**hyperparameter_search(model_name, data_set.feature_generator())),
-                     feature_name)
+                     feature_gen)
 
     def get_model_type(self, model_name):
         return [modelType for modelType in self.__modelTypes if model_name.endswith(modelType)][0]
@@ -62,30 +63,10 @@ class SklearnModelGenerator:
     def get_model_prefix(self, model_name):
         return str.replace(model_name, self.get_model_type(model_name), '')
 
-    def acceptable_feature_types(self, model_name):
+    def acceptable_feature_types(self, model_name) -> Set[str]:
         return {
                 'MLP': {'vector'},
                 'Linear': {'vector'},
                 'GaussianProcess': {'vector'},
                 'GradientBoosting': {'vector'},
         }.get(self.get_model_prefix(model_name), set())
-
-
-class Model:
-
-    def __init__(self, core, feature_name):
-        self.core = core
-        self.feature_name = feature_name
-
-    def fit(self, data_set, labels):
-        inputs = data_set.get_feature(self.feature_name)
-        labels = numpy.array(data_set[labels]).flatten()
-        # print(type(self.core))
-        # print(labels.shape, labels)
-        self.core.fit(inputs, labels)
-
-    def predict(self, data_set):
-        return self.core.predict(data_set.get_feature(self.feature_name))
-
-    def __str__(self):
-        return self.core.__str__().replace("()", "")

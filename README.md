@@ -29,3 +29,21 @@
 
 ## Project documentation
 https://docs.google.com/document/d/1rJ60CYRD7Ljd7DSjCcH7kWHn_QeHakgaioclfYlulls
+
+## Conda recipe
+Install conda-build:
+```
+$ conda install -c conda-forge conda-build
+```
+Build conda recipe:
+```
+$ conda build -c conda-forge conda_recipe/ --python=3
+```
+List linked packages to check if automol is built successfully:
+```
+$ conda list
+```
+Install conda package:
+```
+$ conda install --use-local automol
+```
