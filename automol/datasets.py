@@ -1,6 +1,6 @@
 import glob
 from abc import ABC
-from automol.features import FeatureGenerator
+from automol.features.features import Features
 
 import os
 import pandas
@@ -17,12 +17,12 @@ class Dataset(ABC):
         if self.data.empty:
             raise Exception("dataset empty")
         # cached feature generator
-        self.__featureGenerator = None
+        self.__features = None
 
-    def feature_generator(self):
-        if self.__featureGenerator is None:
-            self.__featureGenerator = FeatureGenerator()
-        return self.__featureGenerator
+    def features(self):
+        if self.__features is None:
+            self.__features = Features(self.data)
+        return self.__features
 
     def get_feature(self, feature_name):
         """
@@ -30,10 +30,10 @@ class Dataset(ABC):
         :param feature_name:
         :return:
         """
-        return self.feature_generator().get_feature(self, feature_name)
+        return self.features().get_feature(feature_name)
 
     def get_acceptable_features(self, acceptable_types):
-        return self.feature_generator().get_acceptable_features(self, acceptable_types)
+        return self.features().get_acceptable_feature_gens(acceptable_types)
 
     @classmethod
     def from_spec(cls, spec):
