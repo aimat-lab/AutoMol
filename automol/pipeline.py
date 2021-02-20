@@ -18,10 +18,16 @@ class Pipeline:
                 self.spec = yaml.safe_load(file)
             except yaml.YAMLError as e:
                 raise e
+            self.set_up()
+
+    def __init__(self, input_yaml_file: DictConfig): # noqa
+        self.spec = dict(input_yaml_file)
+        self.set_up()
+
+    def set_up(self):
         self.data_set = Dataset.from_spec(self.spec)
         self.model_generator = ModelGenerator()
         self.models = []
-
         self.custom_features = self.parse_custom_features(self.spec['custom_features'])
         self.data_set.feature_generator().add_custom_features(self.custom_features)
 

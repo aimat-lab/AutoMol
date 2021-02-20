@@ -1,0 +1,16 @@
+# @package _global_
+amount: 50
+custom_features:
+  feature123:
+    file_link: https://raw.github.com/ff781/b/main/custom_function.py
+    function_name: a
+    input: (smiles, coords)
+    iam: [vector]
+dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat/datasets/dsgdb9nsd'
+dataset_class: 'QM9'
+dataset_split:
+  method: k_fold
+  params: [10, 5]
+labels: ['homo']
+models_filter: ['w', ['GaussianProcessRegressor', 'MLPRegressor', 'LinearRegression', 'GradientBoostingRegressor']]
+problem: regression
