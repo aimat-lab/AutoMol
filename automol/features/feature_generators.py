@@ -8,6 +8,8 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
+from automol.datasets import Dataset
+
 
 @dataclass
 class GeneratorData:
@@ -27,11 +29,22 @@ class FeatureGenerator:
         self.generator_data: GeneratorData = generator_data
 
     @abstractmethod
-    def transform(self, data_set: pd.DataFrame):
+    def transform(self, data_set: Dataset):
         ...
+
+    # singleton
+    @classmethod
+    def __get__(cls) -> 'FeatureGenerator':
+        if cls is FeatureGenerator:
+            raise Exception("can't initialize abstract feature generator")
+        elif cls.__instance__ is None:
+            cls.__instance__ = cls()
+        return cls.__instance__
 
 
 class MoleculeFeatureGenerator(FeatureGenerator):
+
+    __instance__: FeatureGenerator = None
 
     def __init__(self):
         super().__init__(GeneratorData(feature_name='molecule', feature_type='molecules', requirements=["smiles"]))
@@ -42,6 +55,8 @@ class MoleculeFeatureGenerator(FeatureGenerator):
 
 
 class FingerprintFeatureGenerator(FeatureGenerator):
+
+    __instance__: FeatureGenerator = None
 
     def __init__(self):
         super().__init__(GeneratorData(feature_name='fingerprint', feature_type='vector',
@@ -54,6 +69,8 @@ class FingerprintFeatureGenerator(FeatureGenerator):
 
 
 class RDkitFeatureGenerator(FeatureGenerator):
+
+    __instance__: FeatureGenerator = None
 
     def __init__(self):
         super().__init__(GeneratorData(feature_name='rdkit', feature_type='vector', requirements=["molecules"]))
@@ -73,6 +90,8 @@ class RDkitFeatureGenerator(FeatureGenerator):
 
 class CoulombMatricesFeatureGenerator(FeatureGenerator):
 
+    __instance__: FeatureGenerator = None
+
     def __init__(self):
         super().__init__(GeneratorData(feature_name='coulomb_matrices', feature_type='vector',
                                        requirements=["molecules"]))
@@ -84,6 +103,8 @@ class CoulombMatricesFeatureGenerator(FeatureGenerator):
 
 
 class CustomFeatureGenerator(FeatureGenerator):
+
+    __instance__: FeatureGenerator = None
 
     def __init__(self, feature_name: str, feature_type: str, requirements: List[str]):
         super().__init__(GeneratorData(feature_name=feature_name, feature_type=feature_type,

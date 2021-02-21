@@ -12,6 +12,7 @@ import mlflow
 
 class Pipeline:
 
+    # builds the pipeline based on a config
     def __init__(self, input_file):
         with open(input_file, 'r') as file:
             try:
@@ -25,6 +26,7 @@ class Pipeline:
         self.custom_features = self.parse_custom_features(self.spec['custom_features'])
         self.data_set.feature_generator().add_custom_features(self.custom_features)
 
+    # runs this pipeline as specified
     def train(self):
         mlflow.sklearn.autolog()
         split_params = self.spec['dataset_split']['params']
