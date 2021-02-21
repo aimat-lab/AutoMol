@@ -16,6 +16,7 @@ labels: ['homo']
 # model_names: probably need to switch this up for custom models
 models_filter:
   - whitelist: 1
-    type: sklearn
+    git_uri: sklearn
+    entry_point: train
     model_names: ['GaussianProcessRegressor', 'MLPRegressor', 'LinearRegression', 'GradientBoostingRegressor']
 problem: regression

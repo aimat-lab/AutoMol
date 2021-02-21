@@ -29,7 +29,7 @@ class Features:
     def get_possible_feature_generators(self) -> List[FeatureGenerator]:
         possible_feature_generators = []
         for feature_generator in _known_feature_generators:
-            feature_generator_object = feature_generator()
+            feature_generator_object = feature_generator.__get__()
             if feature_generator_object.generator_data.requirements in self.data:
                 possible_feature_generators.append(feature_generator_object)
                 logger.info(f'Created Feature Generator {feature_generator.__name__} for dataset'
