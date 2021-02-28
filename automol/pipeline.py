@@ -6,7 +6,6 @@ import requests
 import numpy
 import pandas
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import mlflow
 
 
@@ -70,26 +69,7 @@ class Pipeline:
             for model in self.model_generator.generate_all_possible_models(
                     self.data_set, self.spec['problem'], self.spec['models_filter']):
                 self.models.append(model)
-                with mlflow.start_run():
-                    model.fit(sets[-1], self.spec['labels'])
-                for i in range(len(sets) - 1):
-                    print('stats on layer %d split:' % i)
-                    self.print_statistics(model, sets[i])
-
-    def print_statistics(self, model, test):
-        stats = self.get_statistics(model, test)
-        print("Model '%s' with feature '%s' has MAE: %f" % (model, model.feature_name, stats['mae']))
-        print("Model '%s' with feature '%s' has MSE: %f" % (model, model.feature_name, stats['mse']))
-        print("Model '%s' with feature '%s' has R2S: %f" % (model, model.feature_name, stats['r2s']))
-
-    def get_statistics(self, model, test):
-        pred = model.predict(test)
-        y_test = test[self.spec['labels']]
-        return {
-            'mae': mean_absolute_error(y_test, pred),
-            'mse': mean_squared_error(y_test, pred),
-            'r2s': r2_score(y_test, pred),
-        }
+                model.run(sets, self.spec['labels'])
 
     @staticmethod
     def parse_custom_features(custom_features):

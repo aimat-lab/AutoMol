@@ -5,6 +5,11 @@ import os
 import rdkit.Chem as Chem
 import rdkit.Chem.Descriptors as Descriptors
 
+"""
+Old Feature Generator
+Currently kept here just for code presence purposes
+"""
+
 
 class Rdkit:
 
