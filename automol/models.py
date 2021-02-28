@@ -1,7 +1,4 @@
 from typing import List, Dict, Optional
-import numpy
-
-from automol.features.feature_generators import FeatureGenerator
 
 
 class ModelGenerator:
@@ -26,19 +23,5 @@ class ModelGenerator:
 
 class Model:
 
-    def __init__(self, core, feature_gen: FeatureGenerator):
-        self.core = core
-        self.feature_gen: FeatureGenerator = feature_gen
-
-    def fit(self, data_set, labels):
-        inputs = self.feature_gen.transform(data_set.data)
-        labels = numpy.array(data_set[labels]).flatten()
-        # print(type(self.core))
-        # print(labels.shape, labels)
-        self.core.fit(inputs, labels)
-
-    def predict(self, data_set):
-        return self.core.predict(self.feature_gen.transform(data_set.data))
-
-    def __str__(self):
-        return self.core.__str__().replace("()", "")
+    def run(self, sets, labels):
+        pass
