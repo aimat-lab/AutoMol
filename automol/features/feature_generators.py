@@ -1,14 +1,15 @@
 import inspect
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
-from automol.datasets import Dataset
+if TYPE_CHECKING:
+    from automol.datasets import Dataset
 
 
 @dataclass
