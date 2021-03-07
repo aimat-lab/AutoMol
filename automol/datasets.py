@@ -21,7 +21,7 @@ class Dataset(ABC):
 
     def features(self):
         if self.__features is None:
-            self.__features = Features(self.data)
+            self.__features = Features(self)
         return self.__features
 
     def get_feature(self, feature_name):
