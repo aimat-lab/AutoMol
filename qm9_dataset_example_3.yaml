@@ -1,0 +1,11 @@
+amount: 50
+dataset_location: 'data/dsgdb9nsd'
+dataset_class: 'QM9'
+features: ['fingerprint', 'rdkit']
+labels: ['homo']
+models_filter:
+  - whitelist: 1
+    git_uri: sklearn
+    entry_point: train
+    model_names: ['RandomForestRegressor', 'GradientBoostingRegressor', 'GaussianProcessRegressor', 'MLPRegressor']
+problem: regression
