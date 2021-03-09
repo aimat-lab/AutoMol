@@ -23,7 +23,7 @@ class Pipeline:
         self.models = []
 
         self.custom_features = self.parse_custom_features(self.spec['custom_features'])
-        self.data_set.feature_generator().add_custom_features(self.custom_features)
+        self.data_set.features().add_custom_features(self.custom_features)
 
     # runs this pipeline as specified
     def train(self):
@@ -84,8 +84,8 @@ class Pipeline:
                 return numpy.array([func(*data[i]) for i in data_set.data.index])
 
             r[k] = {
-                'iam': set(v['iam']),
-                'requirements': v['input'],
+                'iam': list(v['types']),
+                'requirements': list(v['input']),
                 'transform': a
             }
         return r

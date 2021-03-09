@@ -3,8 +3,8 @@ custom_features:
   feature123:
     file_link: https://raw.github.com/ff781/b/main/custom_function.py
     function_name: a
-    requirments: ['smiles', 'coords']
-    type: 'vector'
+    types: [vector]
+    input: ['smiles', 'coords']
 dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat/datasets/dsgdb9nsd'
 dataset_class: 'QM9'
 dataset_split:

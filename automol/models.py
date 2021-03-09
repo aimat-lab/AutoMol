@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 
 class ModelGenerator:
@@ -6,8 +6,10 @@ class ModelGenerator:
     def __init__(self):
         pass
 
-    def generate_all_possible_models(self, data_set, problem_type, models_filters: Optional[List[Dict[str]]] = None) \
-            -> List['Model']:
+    def generate_all_possible_models(self,
+                                     data_set,
+                                     problem_type,
+                                     models_filters: Optional[List[Dict[str, Any]]] = None) -> List['Model']:
         r = []
 
         for models_filter in models_filters:

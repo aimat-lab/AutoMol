@@ -1,15 +1,16 @@
+from __future__ import annotations
+from typing import List, TYPE_CHECKING
+if TYPE_CHECKING:
+    from automol.datasets import Dataset
+
 import inspect
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import List, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Descriptors
-
-if TYPE_CHECKING:
-    from automol.datasets import Dataset
 
 
 @dataclass
@@ -35,11 +36,13 @@ class FeatureGenerator:
 
     # singleton
     @classmethod
-    def __get__(cls) -> 'FeatureGenerator':
+    def get_instance(cls) -> 'FeatureGenerator':
         if cls is FeatureGenerator:
             raise Exception("can't initialize abstract feature generator")
         elif cls.__instance__ is None:
             cls.__instance__ = cls()
+        print(cls.__instance__, type(cls.__instance__))
+        print(dir(cls.__instance__))
         return cls.__instance__
 
 
@@ -104,8 +107,6 @@ class CoulombMatricesFeatureGenerator(FeatureGenerator):
 
 
 class CustomFeatureGenerator(FeatureGenerator):
-
-    __instance__: FeatureGenerator = None
 
     def __init__(self, feature_name: str, feature_type: str, requirements: List[str]):
         super().__init__(GeneratorData(feature_name=feature_name, feature_type=feature_type,
