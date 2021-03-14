@@ -9,3 +9,4 @@ models_filter:
     entry_point: train
     model_names: ['RandomForestRegressor']
 problem: regression
+train_valid_test_split: [0.6, 0.2, 0.2]

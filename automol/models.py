@@ -13,10 +13,10 @@ class ModelGenerator:
         r = []
 
         for models_filter in models_filters:
-            if models_filter['type'] == 'sklearn':
+            if models_filter['git_uri'] == 'sklearn':
                 import automol.sklearn.models
-                r.append(automol.sklearn.models.SklearnModelGenerator()
-                         .generate_all_possible_models(data_set, problem_type, models_filter))
+                r += automol.sklearn.models.SklearnModelGenerator().generate_all_possible_models(
+                    data_set, problem_type, models_filter)
             else:
                 raise Exception('unknown model type specified %s' % models_filter['type'])
 

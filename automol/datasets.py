@@ -8,6 +8,7 @@ from rdkit import Chem
 
 import pysftp
 import paramiko
+import numpy as np
 
 
 class Dataset(ABC):
@@ -21,10 +22,15 @@ class Dataset(ABC):
 
     def features(self):
         if self.__features is None:
-            self.__features = Features(self)
+            self.__features = Features(self.data)
         return self.__features
 
+    def get_features(self, feature_names):
+        #print(f'Dataset get_features: {feature_names}')
+        return np.asarray([self.get_feature(f) for f in feature_names])
+
     def get_feature(self, feature_name):
+        #print(f'Dataset get_feature: {feature_name}')
         """
         wrapper on getting feature from generator
         :param feature_name:
