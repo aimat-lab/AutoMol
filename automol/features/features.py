@@ -3,14 +3,13 @@ from typing import List, TypeVar
 import numpy as np
 import pandas as pd
 
-from automol.features.feature_generators import FingerprintFeatureGenerator, MoleculeFeatureGenerator, \
+from automol.features.feature_generators import FingerprintFeatureGenerator, MoleculeFeatureGenerator,\
     RDkitFeatureGenerator, CoulombMatricesFeatureGenerator, FeatureGenerator
 
 FeatureGeneratorType = TypeVar("FeatureGeneratorType", bound=FeatureGenerator)
 
-_known_feature_generators: List[FeatureGeneratorType] = [FingerprintFeatureGenerator, MoleculeFeatureGenerator,
-                                                         RDkitFeatureGenerator,
-                                                         CoulombMatricesFeatureGenerator]
+_known_feature_generators: List[FeatureGeneratorType] = [FingerprintFeatureGenerator,\
+    MoleculeFeatureGenerator, RDkitFeatureGenerator, CoulombMatricesFeatureGenerator]
 
 def calculate_possible_feature_generators(current_feature_names,
                                           current_known_feature_generators=[],

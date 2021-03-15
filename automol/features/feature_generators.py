@@ -12,7 +12,7 @@ from rdkit.Chem import Descriptors
 @dataclass
 class GeneratorData:
     feature_name: str
-    feature_type: List[str]
+    feature_type: str
     requirements: List[str]
 
     def __init__(self, feature_name, feature_type, requirements):
