@@ -2,12 +2,15 @@ amount: 50
 dataset_location: 'data/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint', 'rdkit']
-labels: ['homo']
+label: 'homo'
 models_filter:
   - whitelist: 1
     git_uri: sklearn
-    entry_point: train
     model_names: ['RandomForestRegressor', 'GradientBoostingRegressor', 'GaussianProcessRegressor', 'MLPRegressor']
 problem: regression
 train_valid_test_split: [0.6, 0.2, 0.2]
 mlflow_experiment: qm9_dataset_automol_demo
+pca_preprocessing:
+    model_name: 'MLPRegressor'
+    feature: rdkit
+    n_components: 50

@@ -6,7 +6,6 @@ label: 'homo'
 models_filter:
   - whitelist: 1
     git_uri: sklearn
-    entry_point: train
     model_names: ['RandomForestRegressor', 'GradientBoostingRegressor', 'GaussianProcessRegressor']
 problem: regression
 train_valid_test_split: [0.6, 0.2, 0.2]

@@ -77,7 +77,6 @@ class SklearnModel(Model):
             mlflow.sklearn.log_model(sk_model=self.core, artifact_path='')
 
             self.statistics = pd.Series(mlflow.get_run(run.info.run_id).data.metrics)
-            self.statistics['model'] = str(self)
 
     def get_statistics(self):
         return self.statistics

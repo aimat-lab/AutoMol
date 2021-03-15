@@ -8,6 +8,7 @@ from rdkit import Chem
 import pysftp
 import paramiko
 import numpy as np
+from sklearn import decomposition
 
 
 class Dataset(ABC):
@@ -33,6 +34,12 @@ class Dataset(ABC):
         if feature is None:
             return None
         return np.stack(feature)
+
+    def get_feature_preprocessed_by_pca(self, feature_name: str, n_components=50):
+        pca = decomposition.PCA(n_components=n_components)
+        feature = self.get_feature(feature_name)
+        pca.fit(feature)
+        return pca.transform(feature)
 
     @classmethod
     def from_spec(cls, spec):
