@@ -34,9 +34,10 @@ class SklearnModelGenerator:
                 if models_filter['whitelist'] \
                 else acceptable_model_names - set(models_filter['model_names'])
 
-        return self.generate_models(problem_type, acceptable_model_names)
+        return SklearnModelGenerator.generate_models(problem_type, acceptable_model_names)
 
-    def generate_models(self, problem_type, model_names):
+    @staticmethod
+    def generate_models(problem_type, model_names):
         return [SklearnModelGenerator.generate_model(problem_type, model_name)
                 for model_name in model_names]
 
@@ -56,11 +57,9 @@ class SklearnModel(Model):
         self.param_search = None
 
     def run(self, train_features, train_labels, test_features, test_labels,
-            param_grid={}, cv=5):
+            param_grid=None, cv=5):
         mlflow.sklearn.autolog()
         with mlflow.start_run() as run:
-
-            print(str(self))
             if str(self) == 'RandomForestRegressor':
                 param_grid = {'max_depth': [3, 5, 10]}
                 self.param_search = GridSearchCV(self.core, param_grid, cv=cv).fit(train_features, train_labels)

@@ -2,25 +2,19 @@ from __future__ import annotations
 from typing import List, Dict, Optional, Any
 
 
-class ModelGenerator:
+def generate_all_possible_models(problem_type: str,
+                                 models_filters: Optional[List[Dict[str, Any]]] = None) -> List[Model]:
+    r: List[Model] = []
 
-    def __init__(self):
-        pass
+    for models_filter in models_filters:
+        if models_filter['git_uri'] == 'sklearn':
+            import automol.sklearn.models
+            r += automol.sklearn.models.SklearnModelGenerator().generate_all_possible_models(
+                problem_type, models_filter)
+        else:
+            raise Exception('unknown model type specified %s' % models_filter['type'])
 
-    def generate_all_possible_models(self,
-                                     problem_type,
-                                     models_filters: Optional[List[Dict[str, Any]]] = None) -> List['Model']:
-        r = []
-
-        for models_filter in models_filters:
-            if models_filter['git_uri'] == 'sklearn':
-                import automol.sklearn.models
-                r += automol.sklearn.models.SklearnModelGenerator().generate_all_possible_models(
-                    problem_type, models_filter)
-            else:
-                raise Exception('unknown model type specified %s' % models_filter['type'])
-
-        return r
+    return r
 
 
 class Model:

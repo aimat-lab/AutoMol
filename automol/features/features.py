@@ -3,17 +3,19 @@ from typing import List, TypeVar
 import numpy as np
 import pandas as pd
 
-from automol.features.feature_generators import FingerprintFeatureGenerator, MoleculeFeatureGenerator,\
+from automol.features.feature_generators import FingerprintFeatureGenerator, MoleculeFeatureGenerator, \
     RDkitFeatureGenerator, CoulombMatricesFeatureGenerator, FeatureGenerator
 
 FeatureGeneratorType = TypeVar("FeatureGeneratorType", bound=FeatureGenerator)
 
-_known_feature_generators: List[FeatureGeneratorType] = [FingerprintFeatureGenerator,\
-    MoleculeFeatureGenerator, RDkitFeatureGenerator, CoulombMatricesFeatureGenerator]
+_known_feature_generators = [FingerprintFeatureGenerator,
+                             MoleculeFeatureGenerator, RDkitFeatureGenerator,
+                             CoulombMatricesFeatureGenerator]
 
-def calculate_possible_feature_generators(current_feature_names,
-                                          current_known_feature_generators=[],
-                                          current_feature_generators=[]):
+
+def calculate_possible_feature_generators(current_feature_names: List[str],
+                                          current_known_feature_generators,
+                                          current_feature_generators):
     for feature_generator in current_known_feature_generators:
         feature_generator_object = feature_generator.get_instance()
         if any(a in current_feature_names for a in feature_generator_object.generator_data.requirements):
@@ -31,9 +33,9 @@ class Features:
     def __init__(self, data: pd.DataFrame):
         self.data = data
         self.__possible_feature_generators__ = calculate_possible_feature_generators(
-            self.get_dataset_feature_names(), _known_feature_generators)
+            self.get_dataset_feature_names(), _known_feature_generators, [])
 
-    def get_dataset_feature_names(self) -> list[str]:
+    def get_dataset_feature_names(self) -> List[str]:
         return self.data.columns.tolist()
 
     def check_requested_feature(self, feature_name: str) -> bool:
@@ -46,7 +48,7 @@ class Features:
     def generate_feature(self, feature_name: str):
         for feature_generator in self.__possible_feature_generators__:
             fg_feature_name = feature_generator.generator_data.feature_name
-            if not fg_feature_name in self.data:
+            if fg_feature_name not in self.data:
                 self.data[fg_feature_name] = feature_generator.transform(self.data).tolist()
                 self.data[fg_feature_name] = self.data[fg_feature_name].apply(np.array)
             if fg_feature_name == feature_name:

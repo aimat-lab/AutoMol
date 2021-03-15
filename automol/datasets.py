@@ -13,7 +13,7 @@ from sklearn import decomposition
 
 class Dataset(ABC):
 
-    def __init__(self, data):
+    def __init__(self, data: pd.DataFrame):
         self.data = data
         if self.data.empty:
             raise Exception("dataset empty")
@@ -26,9 +26,11 @@ class Dataset(ABC):
 
     def get_feature(self, feature_name: str):
         """
-        wrapper on getting feature from generator
-        :param feature_name:
-        :return:
+        Wrapper on getting feature from generator
+
+        Args:
+            feature_name: name of the desired feature
+
         """
         feature = self.features().get_feature(feature_name)
         if feature is None:
