@@ -10,3 +10,4 @@ models_filter:
     model_names: ['RandomForestRegressor', 'GradientBoostingRegressor', 'GaussianProcessRegressor', 'MLPRegressor']
 problem: regression
 train_valid_test_split: [0.6, 0.2, 0.2]
+mlflow_experiment: qm9_dataset_automol_demo

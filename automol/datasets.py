@@ -25,18 +25,13 @@ class Dataset(ABC):
             self.__features = Features(self.data)
         return self.__features
 
-    def get_features(self, feature_names):
-        #print(f'Dataset get_features: {feature_names}')
-        return np.asarray([self.get_feature(f) for f in feature_names])
-
-    def get_feature(self, feature_name):
-        #print(f'Dataset get_feature: {feature_name}')
+    def get_feature(self, feature_name: str):
         """
         wrapper on getting feature from generator
         :param feature_name:
         :return:
         """
-        return self.features().get_feature(feature_name)
+        return np.stack(self.features().get_feature(feature_name))
 
     def get_acceptable_features(self, acceptable_types):
         return self.features().get_acceptable_feature_gens(acceptable_types)

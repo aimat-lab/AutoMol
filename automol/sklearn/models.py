@@ -1,7 +1,7 @@
 from typing import Set
 
 import mlflow
-import numpy
+import pandas as pd
 
 from automol.features.feature_generators import FeatureGenerator
 from automol.models import Model
@@ -38,7 +38,7 @@ class SklearnModelGenerator:
     def __init__(self):
         pass
 
-    def generate_all_possible_models(self, data_set, problem_type, models_filter=None):
+    def generate_all_possible_models(self, problem_type, models_filter=None):
         acceptable_model_names = self.__modelList[problem_type].keys()
 
         if models_filter is not None:
@@ -46,81 +46,45 @@ class SklearnModelGenerator:
                 if models_filter['whitelist'] \
                 else acceptable_model_names - set(models_filter['model_names'])
 
-        return self.generate_models(data_set, problem_type, acceptable_model_names)
+        return self.generate_models(problem_type, acceptable_model_names)
 
-    def generate_models(self, data_set, problem_type, model_names):
-        return [SklearnModelGenerator.generate_model(data_set, problem_type, model_name)
+    def generate_models(self, problem_type, model_names):
+        return [SklearnModelGenerator.generate_model(problem_type, model_name)
                 for model_name in model_names]
 
     @staticmethod
-    def generate_model(data_set, problem_type, model_name):
+    def generate_model(problem_type, model_name):
         type_list = SklearnModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
         return SklearnModel(type_list[model_name](**hyperparameter_search(model_name)))
-
-    def get_model_type(self, model_name):
-        return [modelType for modelType in self.__modelTypes if model_name.endswith(modelType)][0]
-
-    def get_model_prefix(self, model_name):
-        return str.replace(model_name, self.get_model_type(model_name), '')
-
-    def acceptable_feature_types(self, model_name) -> Set[str]:
-        return {
-            'MLP': {'vector'},
-            'Linear': {'vector'},
-            'GaussianProcess': {'vector'},
-            'GradientBoosting': {'vector'},
-        }.get(self.get_model_prefix(model_name), set())
 
 
 class SklearnModel(Model):
 
     def __init__(self, core):
         self.core = core
+        self.statistics = None
 
     def run(self, train_features, train_labels, test_features, test_labels):
         mlflow.sklearn.autolog()
-        with mlflow.start_run():
+        with mlflow.start_run() as run:
             self.core.fit(train_features, train_labels)
             y_pred = self.core.predict(test_features)
 
-            mlflow.log_metric('test_mae', mean_absolute_error(test_labels, y_pred))
-            mlflow.log_metric('test_mse', mean_squared_error(test_labels, y_pred))
-            mlflow.log_metric('test_r2', r2_score(test_labels, y_pred))
+            test_mae = mean_absolute_error(test_labels, y_pred)
+            test_mse = mean_squared_error(test_labels, y_pred)
+            test_r2_score = r2_score(test_labels, y_pred)
 
+            mlflow.log_metric('test_mae', test_mae)
+            mlflow.log_metric('test_mse', test_mse)
+            mlflow.log_metric('test_r2_score', test_r2_score)
             mlflow.sklearn.log_model(sk_model=self.core, artifact_path='')
+            self.statistics = pd.Series(mlflow.get_run(run.info.run_id).data.metrics)
+            self.statistics['model'] = str(self)
 
-    #def run(self, sets, labels):
-        #with mlflow.start_run():
-            #self.core.fit(sets[-1], labels)
-        #for i in range(len(sets) - 1):
-            #print('stats on layer %d split:' % i)
-            #self.print_statistics(self.core, sets[i], labels)
-
-    #def print_statistics(self, model, test, labels):
-        #stats = self.get_statistics(model, test, labels)
-        #for k, v in stats.items():
-            #mlflow.log_metric(k, v)
-
-    #def get_statistics(self, model, test, labels):
-        #pred = model.predict(test)
-        #y_test = test[labels]
-        #return {
-            #'mae': mean_absolute_error(y_test, pred),
-            #'mse': mean_squared_error(y_test, pred),
-            #'r2s': r2_score(y_test, pred),
-        #}
-
-    #def fit(self, data_set, labels):
-        #inputs = self.feature_gen.transform(data_set.data)
-        #labels = numpy.array(data_set[labels]).flatten()
-        ## print(type(self.core))
-        ## print(labels.shape, labels)
-        #self.core.fit(inputs, labels)
-
-    #def predict(self, data_set):
-        #return self.core.predict(self.feature_gen.transform(data_set.data))
+    def get_statistics(self):
+        return self.statistics
 
     def __str__(self):
         return self.core.__str__().replace("()", "")
