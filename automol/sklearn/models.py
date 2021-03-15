@@ -7,14 +7,7 @@ from sklearn.gaussian_process import *  # noqa
 from sklearn.linear_model import *  # noqa
 from sklearn.neural_network import *  # noqa
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-
-def hyperparameter_search(model_name):
-    return {
-        'RandomForestRegressor': {
-            'n_estimators': 42,
-        },
-    }.get(model_name, {})
+from sklearn.model_selection import GridSearchCV
 
 
 class SklearnModelGenerator:
@@ -52,7 +45,7 @@ class SklearnModelGenerator:
         type_list = SklearnModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
-        return SklearnModel(type_list[model_name](**hyperparameter_search(model_name)))
+        return SklearnModel(type_list[model_name]())
 
 
 class SklearnModel(Model):
@@ -60,11 +53,21 @@ class SklearnModel(Model):
     def __init__(self, core):
         self.core = core
         self.statistics = None
+        self.param_search = None
 
-    def run(self, train_features, train_labels, test_features, test_labels):
+    def run(self, train_features, train_labels, test_features, test_labels,
+            param_grid={}, cv=5):
         mlflow.sklearn.autolog()
         with mlflow.start_run() as run:
-            self.core.fit(train_features, train_labels)
+
+            print(str(self))
+            if str(self) == 'RandomForestRegressor':
+                param_grid = {'max_depth': [3, 5, 10]}
+                self.param_search = GridSearchCV(self.core, param_grid, cv=cv).fit(train_features, train_labels)
+                self.core = self.param_search.best_estimator_
+            else:
+                self.core.fit(train_features, train_labels)
+
             y_pred = self.core.predict(test_features)
 
             test_mae = mean_absolute_error(test_labels, y_pred)
@@ -77,6 +80,11 @@ class SklearnModel(Model):
             mlflow.sklearn.log_model(sk_model=self.core, artifact_path='')
 
             self.statistics = pd.Series(mlflow.get_run(run.info.run_id).data.metrics)
+
+    def get_param_search_cv_results(self):
+        if self.param_search is not None:
+            return pd.DataFrame.from_dict(self.param_search.cv_results_)
+        return None
 
     def get_statistics(self):
         return self.statistics
