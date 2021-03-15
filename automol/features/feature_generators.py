@@ -1,10 +1,8 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
-
+from typing import List
 import inspect
 from abc import abstractmethod
 from dataclasses import dataclass
-
 import numpy as np
 import pandas as pd
 from rdkit import Chem
@@ -32,16 +30,12 @@ class FeatureGenerator:
     def transform(self, data: pd.DataFrame):
         ...
 
-    # singleton
     @classmethod
     def get_instance(cls) -> 'FeatureGenerator':
-        #print(f'FeatureGenerator get_instance cls: {cls}')
         if cls is FeatureGenerator:
             raise Exception("can't initialize abstract feature generator")
         elif cls.__instance__ is None:
             cls.__instance__ = cls()
-        #print(cls.__instance__, type(cls.__instance__))
-        #print(dir(cls.__instance__))
         return cls.__instance__
 
 
@@ -86,8 +80,6 @@ class RDkitFeatureGenerator(FeatureGenerator):
 
         transform_result = np.array([[v(mol) for k, v in calc_props.items()] for mol in
                                      data['molecules']])
-        # if sanitize:
-        #     df.dropna(axis=axis, how='any', inplace=True)
         return transform_result
 
 

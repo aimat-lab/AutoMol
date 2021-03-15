@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Dict, Optional, Any
 
 
@@ -25,4 +26,7 @@ class ModelGenerator:
 class Model:
 
     def run(self, train_features, train_labels, test_features, test_labels):
+        pass
+
+    def get_statistics(self):
         pass

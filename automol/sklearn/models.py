@@ -1,17 +1,12 @@
-from typing import Set
-
+from __future__ import annotations
 import mlflow
 import pandas as pd
-
-from automol.features.feature_generators import FeatureGenerator
 from automol.models import Model
-
 from sklearn.ensemble import *  # noqa
 from sklearn.gaussian_process import *  # noqa
 from sklearn.linear_model import *  # noqa
 from sklearn.neural_network import *  # noqa
-
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score  # noqa
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 def hyperparameter_search(model_name):
@@ -80,6 +75,7 @@ class SklearnModel(Model):
             mlflow.log_metric('test_mse', test_mse)
             mlflow.log_metric('test_r2_score', test_r2_score)
             mlflow.sklearn.log_model(sk_model=self.core, artifact_path='')
+
             self.statistics = pd.Series(mlflow.get_run(run.info.run_id).data.metrics)
             self.statistics['model'] = str(self)
 

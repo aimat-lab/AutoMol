@@ -1,12 +1,6 @@
 from __future__ import annotations
 from typing import List, TypeVar
-
-import logging
-import os
-import pickle
-
-import numpy
-import requests
+import numpy as np
 import pandas as pd
 
 from automol.features.feature_generators import FingerprintFeatureGenerator, MoleculeFeatureGenerator, \
@@ -55,7 +49,7 @@ class Features:
             fg_feature_name = feature_generator.generator_data.feature_name
             if not fg_feature_name in self.data:
                 self.data[fg_feature_name] = feature_generator.transform(self.data).tolist()
-                self.data[fg_feature_name] = self.data[fg_feature_name].apply(numpy.array)
+                self.data[fg_feature_name] = self.data[fg_feature_name].apply(np.array)
             if fg_feature_name == feature_name:
                 break
 
