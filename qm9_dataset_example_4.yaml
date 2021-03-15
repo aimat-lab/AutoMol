@@ -10,3 +10,7 @@ models_filter:
 problem: regression
 train_valid_test_split: [0.6, 0.2, 0.2]
 mlflow_experiment: qm9_dataset_automol_demo
+pca_preprocessing:
+    model_name: 'MLPRegressor'
+    feature: rdkit
+    n_components: 50
