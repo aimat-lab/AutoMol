@@ -59,7 +59,7 @@ class SklearnModel(Model):
     def run(self, train_features, train_labels, test_features, test_labels,
             param_grid=None, cv=5):
         mlflow.sklearn.autolog()
-        with mlflow.start_run() as run:
+        with mlflow.start_run() as mlflow_run:
             if str(self) == 'RandomForestRegressor':
                 param_grid = {'max_depth': [3, 5, 10]}
                 self.param_search = GridSearchCV(self.core, param_grid, cv=cv).fit(train_features, train_labels)
@@ -78,7 +78,7 @@ class SklearnModel(Model):
             mlflow.log_metric('test_r2_score', test_r2_score)
             mlflow.sklearn.log_model(sk_model=self.core, artifact_path='')
 
-            self.statistics = pd.Series(mlflow.get_run(run.info.run_id).data.metrics)
+            self.statistics = pd.Series(mlflow.get_run(mlflow_run.info.run_id).data.metrics)
 
     def get_param_search_cv_results(self):
         if self.param_search is not None:

@@ -6,16 +6,7 @@ from mlflow_utils.load_env import export_env
 from sklearn.model_selection import train_test_split
 from automol.datasets import Dataset
 from automol.models import generate_all_possible_models
-
-
-def get_train_test_set(feature, label, train_ratio=0.8):
-    return train_test_split(feature, label, test_size=1 - train_ratio)
-
-
-def get_train_valid_test_set(feature, label, train_ratio=0.6, val_ratio=0.2, test_ratio=0.2):
-    x_train, x_test, y_train, y_test = train_test_split(feature, label, test_size=1 - train_ratio)
-    x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=test_ratio / (test_ratio + val_ratio))
-    return x_train, y_train, x_val, y_val, x_test, y_test
+from sklearn.model_selection import ShuffleSplit
 
 
 class Pipeline:
@@ -43,22 +34,27 @@ class Pipeline:
         label = self.data_set.get_feature(label_name)
         self.models = generate_all_possible_models(
             self.spec['problem'], self.spec['models_filter'])
-        train_ratio, val_ratio, test_ratio = self.spec['train_valid_test_split']
-        feature_pca = None
+        dataset_split_test_size = self.spec['dataset_split_test_size']
+        x_train_pca = x_test_pca = None
+        sh_split = ShuffleSplit(n_splits=1, test_size=dataset_split_test_size)
         for feature_name in feature_names:
             feature = self.data_set.get_feature(feature_name)
+            train_index, test_index = next(sh_split.split(feature, label))
+            x_train, x_test = feature[train_index], feature[test_index]
+            y_train, y_test = label[train_index], label[test_index]
+            if self.pca_preprocessing and feature_name == self.pca_spec['feature']:
+                feature_pca = self.data_set.get_feature_preprocessed_by_pca(feature_name, self.pca_spec['n_components'])
+                x_train_pca, x_test_pca = feature_pca[train_index], feature_pca[test_index]
             for model in self.models:
                 model_name = str(model)
                 if self.pca_preprocessing and feature_name == self.pca_spec['feature'] \
                         and model_name == self.pca_spec['model_name']:
                     n_components = self.pca_spec['n_components']
                     print(f'Running model {model_name} with feature {feature_name} (PCA to {n_components} dimensions).')
-                    feature_pca = self.data_set.get_feature_preprocessed_by_pca(feature_name, n_components)
-                    x_train, x_test, y_train, y_test = get_train_test_set(feature_pca, label, train_ratio)
+                    model.run(x_train_pca, y_train, x_test_pca, y_test)
                 else:
                     print(f'Running model {model_name} with feature {feature_name}.')
-                    x_train, x_test, y_train, y_test = get_train_test_set(feature, label, train_ratio)
-                model.run(x_train, y_train, x_test, y_test)
+                    model.run(x_train, y_train, x_test, y_test)
                 model_statistics = model.get_statistics()
                 model_statistics['feature'] = feature_name
                 model_statistics['model'] = model_name

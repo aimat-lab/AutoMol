@@ -8,5 +8,5 @@ models_filter:
     git_uri: sklearn
     model_names: ['RandomForestRegressor']
 problem: regression
-train_valid_test_split: [0.6, 0.2, 0.2]
+dataset_split_test_size: 0.1
 mlflow_experiment: qm9_dataset_automol_demo
