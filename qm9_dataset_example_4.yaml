@@ -1,4 +1,4 @@
-amount: 50
+amount: 200
 dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat/datasets/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint', 'rdkit']
@@ -10,7 +10,8 @@ models_filter:
 problem: regression
 dataset_split_test_size: 0.1
 mlflow_experiment: qm9_dataset_automol_demo
+train_test_splits: 1
 pca_preprocessing:
     model_name: 'MLPRegressor'
-    feature: rdkit
+    feature: fingerprint
     n_components: 50

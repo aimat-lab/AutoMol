@@ -19,8 +19,14 @@ def generate_all_possible_models(problem_type: str,
 
 class Model:
 
-    def run(self, train_features, train_labels, test_features, test_labels):
+    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv):
         pass
 
     def get_statistics(self):
+        pass
+
+    def get_model_name(self):
+        pass
+
+    def get_param_search_cv_results(self):
         pass

@@ -56,13 +56,12 @@ class SklearnModel(Model):
         self.statistics = None
         self.param_search = None
 
-    def run(self, train_features, train_labels, test_features, test_labels,
-            param_grid=None, cv=5):
+    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv):
         mlflow.sklearn.autolog()
         with mlflow.start_run() as mlflow_run:
-            if str(self) == 'RandomForestRegressor':
-                param_grid = {'max_depth': [3, 5, 10]}
-                self.param_search = GridSearchCV(self.core, param_grid, cv=cv).fit(train_features, train_labels)
+            if hyper_param_grid:
+                self.param_search = GridSearchCV(self.core, param_grid=hyper_param_grid,
+                                                 cv=cv).fit(train_features, train_labels)
                 self.core = self.param_search.best_estimator_
             else:
                 self.core.fit(train_features, train_labels)
@@ -89,4 +88,7 @@ class SklearnModel(Model):
         return self.statistics
 
     def __str__(self):
-        return self.core.__str__().replace("()", "")
+        return self.core.__str__()
+
+    def get_model_name(self):
+        return self.core.__str__().split('(')[0]
