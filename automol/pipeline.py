@@ -25,6 +25,7 @@ class Pipeline:
         self.cv_results = {}
         self.pca_spec = self.spec['pca_preprocessing'] if 'pca_preprocessing' in self.spec else None
         self.models = generate_all_possible_models(self.spec['problem'], self.spec['models_filter'])
+        self.model_names = [model.get_model_name() for model in self.models]
         self.hyper_param_grid = self.spec['hyper_param_grid'] if 'hyper_param_grid' in self.spec else {}
         self.feature_names = self.spec['features']
         self.label_name = self.spec['label']
@@ -32,13 +33,14 @@ class Pipeline:
         self.train_test_splits = self.spec['train_test_splits']
         self.sh_split = ShuffleSplit(n_splits=self.train_test_splits, test_size=self.dataset_split_test_size)
         self.cv = self.spec['cv'] if 'cv' in self.spec else None
+        self.mlflow_experiment = self.spec['mlflow_experiment']
 
     def get_next_split_index(self, feature, label):
         return next(self.sh_split.split(feature, label))
 
     def mlflow_setup(self):
         export_env()
-        mlflow.set_experiment(self.spec['mlflow_experiment'])
+        mlflow.set_experiment(self.mlflow_experiment)
 
     def add_model_statistics(self, model_name, feature_name, model_statistics, split_index):
         model_statistics['feature'] = feature_name
@@ -117,8 +119,8 @@ class Pipeline:
     def print_spec(self):
         print(yaml.dump(self.spec))
 
-    def print_models(self):
-        print('Models to run: {}'.format([model.get_model_name() for model in self.models]))
+    def get_model_names(self):
+        return self.model_names
 
     def plot_grid_search(self, model_name, feature_name, grid_param_name):
         grid_param = self.hyper_param_grid[model_name][grid_param_name]
@@ -131,5 +133,17 @@ class Pipeline:
         ax.set_title(f"Grid Search Scores for {model_name}\n", fontsize=16, fontweight='bold')
         ax.set_xlabel(grid_param_name, fontsize=16)
         ax.set_ylabel('CV mean_test_score', fontsize=16)
+        ax.legend(loc="best", fontsize=15)
+        ax.grid('on')
+
+    def plot_models_performance(self, feature_name, column='test_mae'):
+        _, ax = plt.subplots(1, 1)
+        for model_name in self.model_names:
+            model_mask = self.statistics['model'] == model_name
+            values = self.statistics[model_mask][['split_index', column]].to_numpy()
+            ax.plot(values[:, 0], values[:, 1], '-o', label=model_name)
+        ax.set_title(f"Model performance with feature {feature_name}\n", fontsize=16, fontweight='bold')
+        ax.set_xlabel('split_index', fontsize=16)
+        ax.set_ylabel(column, fontsize=16)
         ax.legend(loc="best", fontsize=15)
         ax.grid('on')
