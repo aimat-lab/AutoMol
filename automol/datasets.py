@@ -14,12 +14,23 @@ from sklearn import decomposition
 class Dataset(ABC):
 
     def __init__(self, data: pd.DataFrame):
+        """
+        Initializes Dataset with given DataFrame
+
+        Args:
+            data: non-empty DataFrame
+        """
         self.data = data
         if self.data.empty:
             raise Exception("dataset empty")
         self.__features = None
 
     def features(self):
+        """
+
+        Returns: Features class attribute based on data
+
+        """
         if self.__features is None:
             self.__features = Features(self.data)
         return self.__features
@@ -31,6 +42,8 @@ class Dataset(ABC):
         Args:
             feature_name: name of the desired feature
 
+        Returns: feature data
+
         """
         feature = self.features().get_feature(feature_name)
         if feature is None:
@@ -38,6 +51,16 @@ class Dataset(ABC):
         return np.stack(feature)
 
     def get_feature_preprocessed_by_pca(self, feature_name: str, n_components=50):
+        """
+        Wrapper on getting feature from generator and preprocessing it by pca
+
+        Args:
+            feature_name: name of the desired feature
+            n_components: number of dimensions for pca
+
+        Returns: feature data preprocessed by pca
+
+        """
         pca = decomposition.PCA(n_components=n_components)
         feature = self.get_feature(feature_name)
         pca.fit(feature)
@@ -45,6 +68,15 @@ class Dataset(ABC):
 
     @classmethod
     def from_spec(cls, spec):
+        """
+        This method generates Dataset from a config specification
+
+        Args:
+            spec: config specification with necessary parameters like dataset class, location, etc.
+
+        Returns: Dataset
+
+        """
         class_name = spec['dataset_class']
         class_ = globals().get(class_name)
         if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
@@ -101,6 +133,13 @@ class Dataset(ABC):
 
     @classmethod
     def parse(cls, text) -> dict:
+        """
+        This method will be used in from_spec() method to generate a concrete Dataset
+
+        Args:
+            text: data to process into a specific format
+
+        """
         pass
 
     def __iter__(self):

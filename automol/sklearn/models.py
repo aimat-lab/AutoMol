@@ -29,6 +29,16 @@ class SklearnModelGenerator:
         pass
 
     def generate_all_possible_models(self, problem_type, models_filter=None):
+        """
+        This method generates all imported sklearn models for a given problem and filter these if necessary.
+
+        Args:
+            problem_type: regression or classification
+            models_filter: whitelist or blacklist to specify which models to include or exclude respectively
+
+        Returns: list of sklearn models
+
+        """
         acceptable_model_names = self.__modelList[problem_type].keys()
 
         if models_filter is not None:
@@ -40,11 +50,31 @@ class SklearnModelGenerator:
 
     @staticmethod
     def generate_models(problem_type, model_names):
+        """
+        This method generates all imported sklearn models for a given problem and model names.
+
+        Args:
+            problem_type: regression or classification
+            model_names: which models to generate
+
+        Returns: list of sklearn models
+
+        """
         return [SklearnModelGenerator.generate_model(problem_type, model_name)
                 for model_name in model_names]
 
     @staticmethod
     def generate_model(problem_type, model_name):
+        """
+        This method generates a sklearn model for a given problem.
+
+        Args:
+            problem_type: regression or classification
+            model_name:
+
+        Returns: sklearn model if it is was imported
+
+        """
         type_list = SklearnModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
@@ -54,6 +84,12 @@ class SklearnModelGenerator:
 class SklearnModel(Model):
 
     def __init__(self, core):
+        """
+        Wrapper of a sklearn model
+
+        Args:
+            core: concrete sklearn model
+        """
         self.core = core
         self.statistics = None
         self.param_search = None

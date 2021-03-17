@@ -28,10 +28,26 @@ class FeatureGenerator:
 
     @abstractmethod
     def transform(self, data: pd.DataFrame):
+        """
+        This method transforms the given data to the desired feature
+
+        Args:
+            data: features required for the transformation
+
+        Returns: the desired feature data
+
+        """
         ...
 
     @classmethod
     def get_instance(cls) -> 'FeatureGenerator':
+        """
+        This method implements singleton for FeatureGenerator instances,
+        raises Exception if the FeatureGenerator is not a concrete class.
+
+        Returns: singleton instance
+
+        """
         if cls is FeatureGenerator:
             raise Exception("can't initialize abstract feature generator")
         elif cls.__instance__ is None:
