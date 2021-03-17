@@ -8,6 +8,8 @@ from sklearn.linear_model import *  # noqa
 from sklearn.neural_network import *  # noqa
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import learning_curve
+import numpy as np
 
 
 class SklearnModelGenerator:
@@ -55,14 +57,20 @@ class SklearnModel(Model):
         self.core = core
         self.statistics = None
         self.param_search = None
+        self.learning_curve_data = None
 
-    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv):
+    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv, is_learning_curve):
         mlflow.sklearn.autolog()
         with mlflow.start_run() as mlflow_run:
             if hyper_param_grid:
                 self.param_search = GridSearchCV(self.core, param_grid=hyper_param_grid,
                                                  cv=cv).fit(train_features, train_labels)
                 self.core = self.param_search.best_estimator_
+            elif is_learning_curve:
+                self.learning_curve_data = learning_curve(self.core, train_features, train_labels,
+                                                          train_sizes=np.linspace(0.1, 1.0, 10),
+                                                          cv=cv, n_jobs=None, return_times=True)
+                return
             else:
                 self.core.fit(train_features, train_labels)
 
@@ -83,6 +91,9 @@ class SklearnModel(Model):
         if self.param_search is not None:
             return pd.DataFrame.from_dict(self.param_search.cv_results_)
         return None
+
+    def get_learning_curve_data(self):
+        return self.learning_curve_data
 
     def get_statistics(self):
         return self.statistics

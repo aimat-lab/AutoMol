@@ -19,7 +19,7 @@ def generate_all_possible_models(problem_type: str,
 
 class Model:
 
-    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv):
+    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv, is_learning_curve):
         pass
 
     def get_statistics(self):
@@ -29,4 +29,7 @@ class Model:
         pass
 
     def get_param_search_cv_results(self):
+        pass
+
+    def get_learning_curve_data(self):
         pass

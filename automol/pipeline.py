@@ -22,7 +22,7 @@ class Pipeline:
         self.data_set = Dataset.from_spec(self.spec)
         self.statistics = pd.DataFrame(columns=['model', 'feature', 'split_index', 'training_mae', 'training_mse',
                                                 'training_r2_score', 'test_mae', 'test_mse', 'test_r2_score'])
-        self.cv_results = {}
+        self.cv_results = self.learning_curve_data = {}
         self.pca_spec = self.spec['pca_preprocessing'] if 'pca_preprocessing' in self.spec else None
         self.models = generate_all_possible_models(self.spec['problem'], self.spec['models_filter'])
         self.model_names = [model.get_model_name() for model in self.models]
@@ -31,24 +31,29 @@ class Pipeline:
         self.label_name = self.spec['label']
         self.dataset_split_test_size = self.spec['dataset_split_test_size']
         self.train_test_splits = self.spec['train_test_splits']
-        self.sh_split = ShuffleSplit(n_splits=self.train_test_splits, test_size=self.dataset_split_test_size)
+        self.dataset_splitter = ShuffleSplit(n_splits=self.train_test_splits, test_size=self.dataset_split_test_size)
         self.cv = self.spec['cv'] if 'cv' in self.spec else None
         self.mlflow_experiment = self.spec['mlflow_experiment']
+        self.is_learning_curve = 'is_learning_curve' in self.spec
 
     def get_next_split_index(self, feature, label):
-        return next(self.sh_split.split(feature, label))
+        return next(self.dataset_splitter.split(feature, label))
 
     def mlflow_setup(self):
         export_env()
         mlflow.set_experiment(self.mlflow_experiment)
 
     def add_model_statistics(self, model_name, feature_name, model_statistics, split_index):
+        if model_statistics is None:
+            return
         model_statistics['feature'] = feature_name
         model_statistics['model'] = model_name
         model_statistics['split_index'] = int(split_index)
         self.statistics = self.statistics.append(model_statistics, ignore_index=True)
 
     def add_cv_results(self, model_name, feature_name, cv_results):
+        if cv_results is None:
+            return
         if model_name in self.cv_results:
             if feature_name in self.cv_results[model_name]:
                 self.cv_results[model_name][feature_name].append(cv_results)
@@ -56,6 +61,17 @@ class Pipeline:
                 self.cv_results[model_name][feature_name] = [cv_results]
         else:
             self.cv_results[model_name] = {feature_name: [cv_results]}
+
+    def add_learning_curve_data(self, model_name, feature_name, learning_curve_data):
+        if learning_curve_data is None:
+            return
+        if model_name in self.learning_curve_data:
+            if feature_name in self.learning_curve_data[model_name]:
+                self.learning_curve_data[model_name][feature_name].append(learning_curve_data)
+            else:
+                self.learning_curve_data[model_name][feature_name] = [learning_curve_data]
+        else:
+            self.learning_curve_data[model_name] = {feature_name: [learning_curve_data]}
 
     def train(self):
         self.mlflow_setup()
@@ -94,6 +110,7 @@ class Pipeline:
                 self.run_model(model_name, model, x_train, y_train, x_test, y_test)
             self.add_model_statistics(model_name, feature_name, model.get_statistics(), split_index)
             self.add_cv_results(model_name, feature_name, model.get_param_search_cv_results())
+            self.add_learning_curve_data(model_name, feature_name, model.get_learning_curve_data())
 
     def run_model(self, model_name, model, x_train, y_train, x_test, y_test, drop_nan=True):
         param_grid = self.hyper_param_grid[model_name] if model_name in self.hyper_param_grid else None
@@ -104,11 +121,11 @@ class Pipeline:
             nan_x_test = np.argwhere(np.isnan(x_test)).flatten()[::len(x_test.shape)]
             nan_y_test = np.argwhere(np.isnan(y_test)).flatten()[::len(y_test.shape)]
             nan_test = np.unique(np.append(nan_x_test, nan_y_test))
-            model.run(np.delete(x_train, nan_train, axis=0), np.delete(y_train, nan_train, axis=0),
-                      np.delete(x_test, nan_test, axis=0), np.delete(y_test, nan_test, axis=0),
-                      param_grid, self.cv)
-        else:
-            model.run(x_train, y_train, x_test, y_test, param_grid, self.cv)
+            x_train = np.delete(x_train, nan_train, axis=0)
+            y_train = np.delete(y_train, nan_train, axis=0)
+            x_test = np.delete(x_test, nan_test, axis=0)
+            y_test = np.delete(y_test, nan_test, axis=0)
+        model.run(x_train, y_train, x_test, y_test, param_grid, self.cv, self.is_learning_curve)
 
     def get_statistics(self):
         return self.statistics
@@ -147,3 +164,51 @@ class Pipeline:
         ax.set_ylabel(column, fontsize=16)
         ax.legend(loc="best", fontsize=15)
         ax.grid('on')
+
+    def plot_learning_curve(self, model_name, feature_name, split_index):
+        train_sizes, train_scores, test_scores, fit_times, _ = \
+            self.learning_curve_data[model_name][feature_name][split_index]
+        _, axes = plt.subplots(1, 3, figsize=(20, 5))
+
+        axes[0].set_title(f"Learning curves for {model_name} with {feature_name}")
+        axes[0].set_xlabel("Training examples")
+        axes[0].set_ylabel("Score")
+
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        fit_times_mean = np.mean(fit_times, axis=1)
+        fit_times_std = np.std(fit_times, axis=1)
+
+        # Plot learning curve
+        axes[0].grid()
+        axes[0].fill_between(train_sizes, train_scores_mean - train_scores_std,
+                             train_scores_mean + train_scores_std, alpha=0.1,
+                             color="r")
+        axes[0].fill_between(train_sizes, test_scores_mean - test_scores_std,
+                             test_scores_mean + test_scores_std, alpha=0.1,
+                             color="g")
+        axes[0].plot(train_sizes, train_scores_mean, 'o-', color="r",
+                     label="Training score")
+        axes[0].plot(train_sizes, test_scores_mean, 'o-', color="g",
+                     label="Cross-validation score")
+        axes[0].legend(loc="best")
+
+        # Plot n_samples vs fit_times
+        axes[1].grid()
+        axes[1].plot(train_sizes, fit_times_mean, 'o-')
+        axes[1].fill_between(train_sizes, fit_times_mean - fit_times_std,
+                             fit_times_mean + fit_times_std, alpha=0.1)
+        axes[1].set_xlabel("Training examples")
+        axes[1].set_ylabel("fit_times")
+        axes[1].set_title("Scalability of the model")
+
+        # Plot fit_time vs score
+        axes[2].grid()
+        axes[2].plot(fit_times_mean, test_scores_mean, 'o-')
+        axes[2].fill_between(fit_times_mean, test_scores_mean - test_scores_std,
+                             test_scores_mean + test_scores_std, alpha=0.1)
+        axes[2].set_xlabel("fit_times")
+        axes[2].set_ylabel("Score")
+        axes[2].set_title("Performance of the model")
