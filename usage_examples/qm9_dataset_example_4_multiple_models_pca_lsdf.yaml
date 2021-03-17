@@ -1,4 +1,4 @@
-amount: 200
+amount: 50
 dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat/datasets/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint', 'rdkit']
