@@ -1,12 +1,12 @@
 amount: 50
-dataset_location: 'data/dsgdb9nsd'
+dataset_location: '../data/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint']
 label: 'homo'
 models_filter:
   - whitelist: 1
     git_uri: sklearn
-    model_names: ['RandomForestRegressor', 'GradientBoostingRegressor', 'GaussianProcessRegressor']
+    model_names: ['RandomForestRegressor']
 problem: regression
 dataset_split_test_size: 0.1
 mlflow_experiment: qm9_dataset_automol_demo

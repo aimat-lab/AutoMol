@@ -1,5 +1,5 @@
 amount: 200
-dataset_location: 'data/dsgdb9nsd'
+dataset_location: '../data/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint', 'rdkit']
 label: 'homo'

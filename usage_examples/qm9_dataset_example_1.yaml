@@ -1,5 +1,5 @@
-amount: 200
-dataset_location: 'data/dsgdb9nsd'
+amount: 50
+dataset_location: '../data/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint']
 label: 'homo'
@@ -10,4 +10,4 @@ models_filter:
 problem: regression
 dataset_split_test_size: 0.1
 mlflow_experiment: qm9_dataset_automol_demo
-train_test_splits: 10
+train_test_splits: 1
