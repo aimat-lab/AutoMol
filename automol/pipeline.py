@@ -3,7 +3,6 @@ import yaml
 import pandas as pd
 import mlflow
 from mlflow_utils.load_env import export_env
-from sklearn.model_selection import train_test_split
 from automol.datasets import Dataset
 from automol.models import generate_all_possible_models
 from sklearn.model_selection import ShuffleSplit
