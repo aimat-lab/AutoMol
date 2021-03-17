@@ -1,21 +1,29 @@
-# automol: AutoML for chemistry/materials
+# AutoMol: AutoML for chemistry/materials
 
 ## Description
 *	Development of an automated workflow to train ML models for typical chemistry datasets
-*	Various descriptors: FPs, features, …
-*	Various models: rdkit, NNs, GCNs
-*	Interface to hyperparameter-optimization (Topic 2)
-*	Modular: Extendible in a flexible way
+*	Various features: fingerprints, rdkit, ...
+*	Various sklearn models: RandomForest, GaussianProcess, GradientBoosting, ...
+*	Interface to hyperparameter-optimization: via hyper_param_grid parameter
+*	Modular: Extendible in a flexible way to generate new features and add new models
+
+```python
+from automol.pipeline import Pipeline
+pipeline = Pipeline('<my_config_yaml_path>')
+pipeline.train()
+pipeline.get_statistics()
+```
 
 ## Technical requirements
-*	Save/Load procedure
-*	Encapsulation (singularity/docker/mlflow)
+*	Save/Load procedure: TODO
+*	Encapsulation: mlflow
 *	Easy (re-)use
-*	python based
-*	Makes use of ScikitLearn, TensorFlow/Keras, and optionally PyTorch
-*	rdkit dependence wherever needed, but as little as possible
-*	Automated plotting and analysis of results
-*	Handling of CV and test/train/validation splits, especially with small datasets
+*	Python based
+*	Makes use of ScikitLearn
+*	Rdkit dependence wherever needed, but as little as possible: currently only in feature_generators.py to generate rdkit features
+*	Automated plotting: currently only performance of models, hyper param scores and learning curve
+*	Analysis of results: TODO
+*	Handling of CV and test/train/validation splits, especially with small datasets: train_test_splits parameter for train/test splits, cv parameter is currently only for hyper param and learning curve
 
 ## Literature
 *	Representations of 3D structures: https://iopscience.iop.org/article/10.1088/2632-2153/abb212/meta
