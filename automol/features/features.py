@@ -1,127 +1,122 @@
-import logging
-import os
-import pickle
-from typing import List, Any, Optional, Dict
-
+from __future__ import annotations
+from typing import List, TypeVar
 import numpy as np
 import pandas as pd
-import requests
 
 from automol.features.feature_generators import FingerprintFeatureGenerator, MoleculeFeatureGenerator, \
-    RDkitFeatureGenerator, CoulombMatricesFeatureGenerator, CustomFeatureGenerator, FeatureGenerator
+    RDkitFeatureGenerator, CoulombMatricesFeatureGenerator, FeatureGenerator
 
-_known_feature_generators: List[Any] = [FingerprintFeatureGenerator, MoleculeFeatureGenerator, RDkitFeatureGenerator,
-                                        CoulombMatricesFeatureGenerator]
+FeatureGeneratorType = TypeVar("FeatureGeneratorType", bound=FeatureGenerator)
 
-logger = logging.getLogger(__name__)
+_known_feature_generators = [FingerprintFeatureGenerator,
+                             MoleculeFeatureGenerator, RDkitFeatureGenerator,
+                             CoulombMatricesFeatureGenerator]
+
+
+def calculate_possible_feature_generators(current_feature_names: List[str],
+                                          current_known_feature_generators,
+                                          current_feature_generators):
+    """
+    This method calculates recursively all possible feature generators.
+
+    Args:
+        current_feature_names: list of features names which can be used to generate new features,
+            increases with recursive steps if successful
+        current_known_feature_generators: list of all features generators to try on the current features,
+            reduces with recursive steps if successful
+        current_feature_generators: list of the current possible features generators,
+            increases with recursive steps if successful
+
+    Returns: list of all possible features generators in the ascending order of necessary features,
+        i.e. if feature_generator_1 needs feature_A and the feature_generator_2 needs feature_A and feature_B,
+        then following list will be returned: [feature_generator_1, feature_generator_2]
+
+    """
+    for feature_generator in current_known_feature_generators:
+        feature_generator_object = feature_generator.get_instance()
+        if any(a in current_feature_names for a in feature_generator_object.generator_data.requirements):
+            current_feature_names.append(feature_generator_object.generator_data.feature_name)
+            current_known_feature_generators.remove(feature_generator)
+            current_feature_generators.append(feature_generator_object)
+            return calculate_possible_feature_generators(current_feature_names,
+                                                         current_known_feature_generators,
+                                                         current_feature_generators)
+    return current_feature_generators
 
 
 class Features:
 
-    def __init__(self, data_set: pd.DataFrame, custom_features: Optional[Dict] = None):
-        self.possible_feature_generators = self.get_possible_feature_generators()
-        if custom_features:
-            self.parse_custom_features(custom_features=custom_features)
-        self.data_set = data_set
-        self.data = data_set.data
-        self.generated_features = dict()
+    def __init__(self, data: pd.DataFrame):
+        """
+        Initializes Features with given DataFrame
+        features of which are used to calculate all possible feature generators
 
-    def get_possible_feature_generators(self) -> List[FeatureGenerator]:
-        possible_feature_generators = []
-        for feature_generator in _known_feature_generators:
-            feature_generator_object = feature_generator.__get__()
-            if feature_generator_object.generator_data.requirements in self.data:
-                possible_feature_generators.append(feature_generator_object)
-                logger.info(f'Created Feature Generator {feature_generator.__name__} for dataset'
-                            f'{self.data_set.__name}')
-        return possible_feature_generators
+        Args:
+            data: non-empty DataFrame
+        """
+        self.data = data
+        self.__possible_feature_generators__ = calculate_possible_feature_generators(
+            self.get_dataset_feature_names(), _known_feature_generators, [])
 
-    def get_acceptable_feature_gens(self, acceptable_types):
-        return [gen for gen in self.get_possible_feature_generators() if
-                set(gen.generator_data.feature_type) & set(acceptable_types)]
+    def get_dataset_feature_names(self) -> List[str]:
+        """
 
-    def parse_custom_features(self, custom_features):
-        parsed_features = dict()
-        for feature_name, feature_content in custom_features.items():
-            file_link = feature_content["file_link"]
-            try:
-                response = requests.get(file_link)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                logger.info(f"Could not parse custom feature at link {file_link}")
-                raise SystemExit(e)
-            response_text = response.text
-            global_custom_namespace = {}
-            exec(response_text, global_custom_namespace)
+        Returns: feature names of the DataFrame
 
-            custom_feature_generator = CustomFeatureGenerator(feature_name=feature_name,
-                                                              feature_type=feature_content['type'],
-                                                              requirements=feature_content['requirements'])
-            custom_feature_generator.transform = global_custom_namespace[feature_content['function_name']]
-            if custom_feature_generator.generator_data.requirements in self.data:
-                self.possible_feature_generators.append(custom_feature_generator)
-            else:
-                logger.info(f"Custom feature {feature_name} is not compatible with the data_class"
-                            f"{self.data_set.__name__}")
-        return parsed_features
+        """
+        return self.data.columns.tolist()
 
     def check_requested_feature(self, feature_name: str) -> bool:
+        """
+        Check if a feature can be generated
+
+        Args:
+            feature_name: name of the desired feature
+
+        Returns: True if the respective feature generator is in the list
+
+        """
         match = False
-        for feature_generator in self.possible_feature_generators:
+        for feature_generator in self.__possible_feature_generators__:
             if feature_generator.generator_data.feature_name == feature_name:
                 match = True
         return match
 
-    def get_features_from_type(self, feature_type: str):
-        feature_generators_from_type = list()
-        for feature_generator in self.possible_feature_generators:
-            if feature_generator.generator_data.feature_type == feature_type:
-                feature_generators_from_type.append(feature_generator)
-        return feature_generators_from_type
+    def generate_feature(self, feature_name: str):
+        """
+        This method generates not only the requested feature, but also all the necessary features for it,
+        and adds these to the current features. No error handling if the feature can not be generated.
 
-    def get_feature(self, feature_name: Optional[str]):
-        # check if requested feature is supported from the dataset
-        if feature_name:
-            if not self.check_requested_feature(feature_name=feature_name):
-                logger.info(f"Requested feature {feature_name} is not compatible for the dataset"
-                            f"{self.data_set.__name__}. Skip this feature.")
-                return None
-        # if it's represented in the dataset, return directly
-        if feature_name in self.data:
+        Args:
+            feature_name: name of the desired feature
+
+        """
+        for feature_generator in self.__possible_feature_generators__:
+            fg_feature_name = feature_generator.generator_data.feature_name
+            if fg_feature_name not in self.data:
+                self.data[fg_feature_name] = feature_generator.transform(self.data).tolist()
+                self.data[fg_feature_name] = self.data[fg_feature_name].apply(np.array)
+            if fg_feature_name == feature_name:
+                break
+
+    def get_feature(self, feature_name: str):
+        """
+        Getter method to get a feature data.
+
+        Args:
+            feature_name: name of the desired feature
+
+        Returns: feature data if the feature is already in the current DataFrame or can be generated, else None
+
+        """
+        if feature_name in self.get_dataset_feature_names():
+            print(f'Got the feature {feature_name} from the current dataset.')
             return self.data[feature_name]
-
-        # return already generated feature
-        if feature_name in self.generated_features:
-            return self.generated_features[feature_name]
-
-        # check if generated features are already cached
-        indices = self.data.get_indices()
-        cached = np.zeros(len(indices), dtype=bool)
-        data_set_location = 'data/dsgdb9nsd'
-        feature_dir = os.path.join(data_set_location, feature_name)
-        feature_path = os.path.join(feature_dir, feature_name + '.p')
-        cached_feature = {}
-        if os.path.exists(feature_path):
-            cached_feature = pickle.load(open(feature_path, "rb"))
-        for i, ind in enumerate(indices):
-            if ind in cached_feature:
-                cached[i] = True
-
-        # use the feature generator to generate and cache the feature
-        if feature_name not in self.generated_features and not all(cached):
-            pass
-
-        # use cached features
-        if all(cached):
-            self.generated_features[feature_name] = np.array([v for v in cached_feature.values()])
-
-        # save features
-        if not all(cached):
-            os.makedirs(feature_dir)
-            to_save = {}
-            for i, f in enumerate(self.generated_features[feature_name]):
-                to_save[indices[i]] = f
-            pickle.dump(to_save, open(feature_path, 'wb'))
-
-        # return the cached feature
-        return self.generated_features[feature_name]
+        print(f'Checking if the feature {feature_name} can be generated.')
+        if self.check_requested_feature(feature_name):
+            self.generate_feature(feature_name)
+            print(f'Got the generated feature {feature_name}.')
+            return self.data[feature_name]
+        else:
+            print(f'The feature {feature_name} could not be generated.')
+        return None

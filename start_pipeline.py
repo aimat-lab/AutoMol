@@ -21,7 +21,7 @@ def main(argv):
             configfile = arg
     if configfile:
         pipeline = Pipeline(configfile)
-        pipeline.print_spec()
+        pipeline.train()
 
 
 def print_usage():

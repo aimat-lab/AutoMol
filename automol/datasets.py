@@ -1,42 +1,82 @@
+from __future__ import annotations
 import glob
 from abc import ABC
 from automol.features.features import Features
-
 import os
-import pandas
+import pandas as pd
 from rdkit import Chem
-
 import pysftp
 import paramiko
+import numpy as np
+from sklearn import decomposition
 
 
 class Dataset(ABC):
 
-    def __init__(self, data):
+    def __init__(self, data: pd.DataFrame):
+        """
+        Initializes Dataset with given DataFrame
+
+        Args:
+            data: non-empty DataFrame
+        """
         self.data = data
         if self.data.empty:
             raise Exception("dataset empty")
-        # cached feature generator
         self.__features = None
 
     def features(self):
+        """
+
+        Returns: Features class attribute based on data
+
+        """
         if self.__features is None:
             self.__features = Features(self.data)
         return self.__features
 
-    def get_feature(self, feature_name):
+    def get_feature(self, feature_name: str):
         """
-        wrapper on getting feature from generator
-        :param feature_name:
-        :return:
-        """
-        return self.features().get_feature(feature_name)
+        Wrapper on getting feature from generator
 
-    def get_acceptable_features(self, acceptable_types):
-        return self.features().get_acceptable_feature_gens(acceptable_types)
+        Args:
+            feature_name: name of the desired feature
+
+        Returns: feature data
+
+        """
+        feature = self.features().get_feature(feature_name)
+        if feature is None:
+            return None
+        return np.stack(feature)
+
+    def get_feature_preprocessed_by_pca(self, feature_name: str, n_components=50):
+        """
+        Wrapper on getting feature from generator and preprocessing it by pca
+
+        Args:
+            feature_name: name of the desired feature
+            n_components: number of dimensions for pca
+
+        Returns: feature data preprocessed by pca
+
+        """
+        pca = decomposition.PCA(n_components=n_components)
+        feature = self.get_feature(feature_name)
+        pca.fit(feature)
+        return pca.transform(feature)
 
     @classmethod
     def from_spec(cls, spec):
+        """
+        This method generates Dataset from a config specification
+
+        Args:
+            spec: config specification with necessary parameters like dataset class, location, etc.
+
+        Returns: Dataset
+
+        """
         class_name = spec['dataset_class']
         class_ = globals().get(class_name)
         if class_ is None or not issubclass(type(class_), type) or not issubclass(class_, cls):
@@ -87,16 +127,19 @@ class Dataset(ABC):
                     text = f.read()
                 parse_and_catch(text)
 
-        data = pandas.DataFrame(data, columns=data.keys())
+        data = pd.DataFrame(data, columns=data.keys())
 
         return class_(data)
 
     @classmethod
     def parse(cls, text) -> dict:
-        pass
+        """
+        This method will be used in from_spec() method to generate a concrete Dataset
 
-    @classmethod
-    def get_indices(cls) -> list:
+        Args:
+            text: data to process into a specific format
+
+        """
         pass
 
     def __iter__(self):
@@ -121,34 +164,3 @@ class QM9(Dataset):
                                        isomericSmiles=False, canonical=True)
         r['index'] = int(r['index'])
         return r
-
-    @classmethod
-    def get_indices(cls) -> list:
-        return ["{:06d}".format(index) for index in cls.data['index']]
-
-
-class DataSplit:
-
-    @staticmethod
-    def invoke(data: pandas.DataFrame, method: str, param):
-        if hasattr(DataSplit, method):
-            return getattr(DataSplit, method)(data, param)
-        raise TypeError('method %s is illegal' % method)
-
-    @staticmethod
-    def k_fold(data, k):
-        """
-        k fold split iterator that doesn't copy data
-        doesn't support mutability of datasets
-        :param data
-        :param k: k-fold
-        :return: generator for tuples (valid 1/k, train (k-1)/k)
-        """
-        data = data.sample(frac=1)
-        inc = len(data.index) / k
-        return ((next_valid, data.drop(next_valid.index)) for next_valid in
-                (data.index[round(i * inc): round((i+1) * inc)] for i in range(k)))
-
-    @staticmethod
-    def split(data, split_sep):
-        return (data[0: split_sep], data[split_sep:]),

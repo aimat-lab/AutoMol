@@ -1,25 +1,15 @@
-from typing import Set
-
+from __future__ import annotations
 import mlflow
-import numpy
-
-from automol.features.feature_generators import FeatureGenerator
+import pandas as pd
 from automol.models import Model
-
 from sklearn.ensemble import *  # noqa
 from sklearn.gaussian_process import *  # noqa
 from sklearn.linear_model import *  # noqa
 from sklearn.neural_network import *  # noqa
-
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score  # noqa
-
-
-def hyperparameter_search(model_name, feature_generator):
-    return {
-        'RandomForestRegressor': {
-            'n_estimators': 42,
-        },
-    }.get(model_name, {})
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import learning_curve
+import numpy as np
 
 
 class SklearnModelGenerator:
@@ -38,7 +28,17 @@ class SklearnModelGenerator:
     def __init__(self):
         pass
 
-    def generate_all_possible_models(self, data_set, problem_type, models_filter=None):
+    def generate_all_possible_models(self, problem_type, models_filter=None):
+        """
+        This method generates all imported sklearn models for a given problem and filter these if necessary.
+
+        Args:
+            problem_type: regression or classification
+            models_filter: whitelist or blacklist to specify which models to include or exclude respectively
+
+        Returns: list of sklearn models
+
+        """
         acceptable_model_names = self.__modelList[problem_type].keys()
 
         if models_filter is not None:
@@ -46,72 +46,96 @@ class SklearnModelGenerator:
                 if models_filter['whitelist'] \
                 else acceptable_model_names - set(models_filter['model_names'])
 
-        return self.generate_models(data_set, problem_type, acceptable_model_names)
-
-    def generate_models(self, data_set, problem_type, model_names):
-        return [SklearnModelGenerator.generate_model(data_set, problem_type, model_name, acceptable_feature_gen)
-                for model_name in model_names for acceptable_feature_gen in
-                data_set.get_acceptable_feature_gens(self.acceptable_feature_types(model_name))]
+        return SklearnModelGenerator.generate_models(problem_type, acceptable_model_names)
 
     @staticmethod
-    def generate_model(data_set, problem_type, model_name, feature_gen):
+    def generate_models(problem_type, model_names):
+        """
+        This method generates all imported sklearn models for a given problem and model names.
+
+        Args:
+            problem_type: regression or classification
+            model_names: which models to generate
+
+        Returns: list of sklearn models
+
+        """
+        return [SklearnModelGenerator.generate_model(problem_type, model_name)
+                for model_name in model_names]
+
+    @staticmethod
+    def generate_model(problem_type, model_name):
+        """
+        This method generates a sklearn model for a given problem.
+
+        Args:
+            problem_type: regression or classification
+            model_name:
+
+        Returns: sklearn model if it is was imported
+
+        """
         type_list = SklearnModelGenerator.__modelList[problem_type]
         if model_name not in type_list:
             raise Exception('unknown model %s' % model_name)
-        return SklearnModel(type_list[model_name](**hyperparameter_search(model_name, data_set.feature_generator())),
-                            feature_gen)
-
-    def get_model_type(self, model_name):
-        return [modelType for modelType in self.__modelTypes if model_name.endswith(modelType)][0]
-
-    def get_model_prefix(self, model_name):
-        return str.replace(model_name, self.get_model_type(model_name), '')
-
-    def acceptable_feature_types(self, model_name) -> Set[str]:
-        return {
-            'MLP': {'vector'},
-            'Linear': {'vector'},
-            'GaussianProcess': {'vector'},
-            'GradientBoosting': {'vector'},
-        }.get(self.get_model_prefix(model_name), set())
+        return SklearnModel(type_list[model_name]())
 
 
 class SklearnModel(Model):
 
-    def __init__(self, core, feature_gen: FeatureGenerator):
+    def __init__(self, core):
+        """
+        Wrapper of a sklearn model
+
+        Args:
+            core: concrete sklearn model
+        """
         self.core = core
-        self.feature_gen: FeatureGenerator = feature_gen
+        self.statistics = None
+        self.param_search = None
+        self.learning_curve_data = None
 
-    def run(self, sets, labels):
-        with mlflow.start_run():
-            self.core.fit(sets[-1], labels)
-        for i in range(len(sets) - 1):
-            print('stats on layer %d split:' % i)
-            self.print_statistics(self.core, sets[i], labels)
+    def run(self, train_features, train_labels, test_features, test_labels, hyper_param_grid, cv, is_learning_curve):
+        mlflow.sklearn.autolog()
+        with mlflow.start_run() as mlflow_run:
+            if hyper_param_grid:
+                self.param_search = GridSearchCV(self.core, param_grid=hyper_param_grid,
+                                                 cv=cv).fit(train_features, train_labels)
+                self.core = self.param_search.best_estimator_
+            elif is_learning_curve:
+                self.learning_curve_data = learning_curve(self.core, train_features, train_labels,
+                                                          train_sizes=np.linspace(0.1, 1.0, 10),
+                                                          cv=cv, n_jobs=None, return_times=True)
+                return
+            else:
+                self.core.fit(train_features, train_labels)
 
-    def print_statistics(self, model, test, labels):
-        stats = self.get_statistics(model, test, labels)
-        for k, v in stats.items():
-            mlflow.log_metric(k, v)
+            y_pred = self.core.predict(test_features)
 
-    def get_statistics(self, model, test, labels):
-        pred = model.predict(test)
-        y_test = test[labels]
-        return {
-            'mae': mean_absolute_error(y_test, pred),
-            'mse': mean_squared_error(y_test, pred),
-            'r2s': r2_score(y_test, pred),
-        }
+            test_mae = mean_absolute_error(test_labels, y_pred)
+            test_mse = mean_squared_error(test_labels, y_pred)
+            test_r2_score = r2_score(test_labels, y_pred)
 
-    def fit(self, data_set, labels):
-        inputs = self.feature_gen.transform(data_set.data)
-        labels = numpy.array(data_set[labels]).flatten()
-        # print(type(self.core))
-        # print(labels.shape, labels)
-        self.core.fit(inputs, labels)
+            mlflow.log_metric('test_mae', test_mae)
+            mlflow.log_metric('test_mse', test_mse)
+            mlflow.log_metric('test_r2_score', test_r2_score)
+            mlflow.sklearn.log_model(sk_model=self.core, artifact_path='')
 
-    def predict(self, data_set):
-        return self.core.predict(self.feature_gen.transform(data_set.data))
+            self.statistics = pd.Series(mlflow.get_run(mlflow_run.info.run_id).data.metrics)
+
+    def get_param_search_cv_results(self):
+        if self.param_search is not None:
+            return pd.DataFrame.from_dict(self.param_search.cv_results_)
+        return None
+
+    def get_learning_curve_data(self):
+        return self.learning_curve_data
+
+    def get_statistics(self):
+        return self.statistics
 
     def __str__(self):
-        return self.core.__str__().replace("()", "")
+        return self.core.__str__()
+
+    def get_model_name(self):
+        return self.core.__str__().split('(')[0]

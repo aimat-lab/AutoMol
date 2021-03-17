@@ -1,0 +1,17 @@
+amount: 300
+dataset_location: '../data/dsgdb9nsd'
+dataset_class: 'QM9'
+features: ['fingerprint']
+label: 'homo'
+models_filter:
+  - whitelist: 1
+    git_uri: sklearn
+    model_names: ['MLPRegressor']
+problem: regression
+dataset_split_test_size: 0.1
+mlflow_experiment: qm9_dataset_automol_demo
+train_test_splits: 1
+pca_preprocessing:
+    model_name: 'MLPRegressor'
+    feature: fingerprint
+    n_components: 50
