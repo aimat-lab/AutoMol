@@ -25,6 +25,52 @@ pipeline.get_statistics()
 *	Analysis of results: TODO
 *	Handling of CV and test/train/validation splits, especially with small datasets: train_test_splits parameter for train/test splits, cv parameter is currently only for hyper param and learning curve
 
+## How to use
+                                   Config.yml
+
+
+dataset_location: '../data/dsgdb9nsd'
+
+dataset_class: 'QM9'
+
+label: 'homo'
+
+models_filter:
+
+ - whitelist: 1
+
+    git_uri: sklearn
+
+    model_names: ['RandomForestRegressor']
+
+problem: regression
+
+amount: 200
+
+features: ['fingerprint', 'rdkit']
+
+dataset_split_test_size: 0.1
+
+mlflow_experiment: qm9_dataset_automol_demo
+
+train_test_splits: 2
+
+cv: 5
+
+hyper_param_grid:
+
+    RandomForestRegressor: {'max_depth': [3, 5, 10]}
+
+is_learning_curve: True
+
+pca_preprocessing:
+
+ model_name: 'MLPRegressor'
+
+ feature: fingerprint
+
+    n_components: 50
+
 ## Literature
 *	Representations of 3D structures: https://iopscience.iop.org/article/10.1088/2632-2153/abb212/meta
 *	Library that implements several representations and ML models: https://www.qmlcode.org
