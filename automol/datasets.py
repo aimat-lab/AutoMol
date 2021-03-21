@@ -150,6 +150,9 @@ class Dataset(ABC):
 
 
 class QM9(Dataset):
+    """
+    This class is intended for GDB-9 molecules
+    """
 
     @classmethod
     def parse(cls, text):

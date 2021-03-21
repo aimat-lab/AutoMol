@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, TypeVar
+from typing import List, TypeVar, Annotated
 import numpy as np
 import pandas as pd
 
@@ -8,7 +8,9 @@ from automol.features.feature_generators import FingerprintFeatureGenerator, Mol
 
 FeatureGeneratorType = TypeVar("FeatureGeneratorType", bound=FeatureGenerator)
 
-_known_feature_generators = [FingerprintFeatureGenerator,
+_known_feature_generators: Annotated[List[FeatureGeneratorType],
+                                     "Known feature generators for all datasets"] = \
+                            [FingerprintFeatureGenerator,
                              MoleculeFeatureGenerator, RDkitFeatureGenerator,
                              CoulombMatricesFeatureGenerator]
 
