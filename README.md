@@ -25,42 +25,56 @@ pipeline.get_statistics()
 *	Analysis of results: TODO
 *	Handling of CV and test/train/validation splits, especially with small datasets: train_test_splits parameter for train/test splits, cv parameter is currently only for hyper param and learning curve
 
-## How to use
-                                   Config.yml
-
-
+## How to use the config.yaml
+```
+#relative location of dataset, use lsdf:// for dataset stored in lsdf
 dataset_location: '../data/dsgdb9nsd'
 
+#specifies how the data is organized at the location/what format the data files are in
 dataset_class: 'QM9'
 
+#specifies what labels to train on
+#can just be replaced with labels as an array
 label: 'homo'
 
+#list of model filters
 models_filter:
 
+  #whitelist, specifies whether model_names should serve as a white- or blacklist
  - whitelist: 1
 
+  #git_uri, for the associated model_generator
     git_uri: sklearn
 
+  #list of names to filter from all the usable and generatable models
     model_names: ['RandomForestRegressor']
 
+#problem type
 problem: regression
 
+#amount of data elements to use from the data set for abridged training
 amount: 200
 
+#specifies what features to train on
 features: ['fingerprint', 'rdkit']
 
+#test split size
 dataset_split_test_size: 0.1
 
+#name of the experiment in the mlflow log
 mlflow_experiment: qm9_dataset_automol_demo
 
+#amount of train - test splits
 train_test_splits: 2
 
+#amount of train/test - validation splits
 cv: 5
 
 hyper_param_grid:
 
     RandomForestRegressor: {'max_depth': [3, 5, 10]}
 
+#calculates additionally the learning curve
 is_learning_curve: True
 
 pca_preprocessing:
@@ -70,6 +84,7 @@ pca_preprocessing:
  feature: fingerprint
 
     n_components: 50
+```
 
 ## Literature
 *	Representations of 3D structures: https://iopscience.iop.org/article/10.1088/2632-2153/abb212/meta
