@@ -67,9 +67,10 @@ mlflow_experiment: qm9_dataset_automol_demo
 #amount of train - test splits
 train_test_splits: 2
 
-#amount of train/test - validation splits
+#amount of train - validation splits
 cv: 5
 
+#manually specified subset of the hyperparameter space for GridSearch
 hyper_param_grid:
 
     RandomForestRegressor: {'max_depth': [3, 5, 10]}
@@ -77,6 +78,7 @@ hyper_param_grid:
 #calculates additionally the learning curve
 is_learning_curve: True
 
+#feature that needs principal component analysis for a specific model
 pca_preprocessing:
 
  model_name: 'MLPRegressor'
