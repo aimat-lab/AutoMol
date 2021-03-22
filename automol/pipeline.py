@@ -33,7 +33,7 @@ class Pipeline:
         self.model_names = [model.get_model_name() for model in self.models]
         self.hyper_param_grid = self.spec['hyper_param_grid'] if 'hyper_param_grid' in self.spec else {}
         self.feature_names = self.spec['features']
-        self.label_name = self.spec['label']
+        self.label_names = self.spec['labels']
         self.dataset_split_test_size = self.spec['dataset_split_test_size']
         self.train_test_splits = self.spec['train_test_splits']
         self.dataset_splitter = ShuffleSplit(n_splits=self.train_test_splits, test_size=self.dataset_split_test_size)
@@ -128,15 +128,15 @@ class Pipeline:
 
         """
         self.mlflow_setup()
-        label = self.data_set.get_feature(self.label_name)
+        labels = self.data_set[self.label_names].to_numpy()
         feature_pca = None
         for feature_name in self.feature_names:
             feature = self.data_set.get_feature(feature_name)
             if self.pca_spec and feature_name == self.pca_spec['feature']:
                 feature_pca = self.data_set.get_feature_preprocessed_by_pca(feature_name, self.pca_spec['n_components'])
-            self.train_with_feature(feature_name, feature, label, feature_pca)
+            self.train_with_feature(feature_name, feature, labels, feature_pca)
 
-    def train_with_feature(self, feature_name, feature, label, feature_pca=None):
+    def train_with_feature(self, feature_name, feature, labels, feature_pca=None):
         """
         This method starts training for a specific feature, all train test splits and all models
         defined in the config file
@@ -144,15 +144,15 @@ class Pipeline:
         Args:
             feature_name: name of the feature
             feature: all data of the feature
-            label: all data of the label
+            labels: all data of the labels
             feature_pca: all data of the feature preprocessed by pca
 
         """
         x_train_pca = x_test_pca = None
         for split_index in range(self.train_test_splits):
-            train_index, test_index = self.get_next_train_test_indices(feature, label)
+            train_index, test_index = self.get_next_train_test_indices(feature, labels)
             x_train, x_test = feature[train_index], feature[test_index]
-            y_train, y_test = label[train_index], label[test_index]
+            y_train, y_test = labels[train_index], labels[test_index]
             if self.pca_spec and feature_name == self.pca_spec['feature']:
                 x_train_pca, x_test_pca = feature_pca[train_index], feature_pca[test_index]
             self.train_with_dataset_split(split_index, feature_name, x_train, y_train, x_test, y_test,
@@ -168,9 +168,9 @@ class Pipeline:
             split_index: index of a train test split
             feature_name: name of the feature
             x_train: train data of the feature
-            y_train: train data of the label
+            y_train: train data of the labels
             x_test: test data of the feature
-            y_test: test data of the label
+            y_test: test data of the labels
             x_train_pca: train data of the feature preprocessed by pca
             x_test_pca: test data of the feature preprocessed by pca
 
@@ -198,9 +198,9 @@ class Pipeline:
             model_name: name of the model to run
             model: model to run
             x_train: train data of the feature
-            y_train: train data of the label
+            y_train: train data of the labels
             x_test: test data of the feature
-            y_test: test data of the label
+            y_test: test data of the labels
             drop_nan: if True then deletes all nan rows in pairs: x_train, y_train and x_test, y_test
             to keep the number of elements the same
 
