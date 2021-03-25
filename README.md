@@ -65,18 +65,19 @@ dataset_split_test_size: 0.1
 mlflow_experiment: qm9_dataset_automol_demo
 
 #amount of train - test splits
+#or train/validation - test split if using cross validation (cv)
 train_test_splits: 2
 
-#amount of train - validation splits
+#amount of train - validation splits [not yet implemented]
 cv: 5
+
+#calculates additionally the learning curve
+is_learning_curve: True
 
 #manually specified subset of the hyperparameter space for GridSearch
 hyper_param_grid:
 
     RandomForestRegressor: {'max_depth': [3, 5, 10]}
-
-#calculates additionally the learning curve
-is_learning_curve: True
 
 #feature that needs principal component analysis for a specific model
 pca_preprocessing:
