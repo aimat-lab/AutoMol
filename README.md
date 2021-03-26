@@ -69,6 +69,7 @@ mlflow_experiment: qm9_dataset_automol_demo
 train_test_splits: 2
 
 #amount of train - validation splits [not yet implemented]
+#currently only with learning_curve or hyper_param_grid, e.g. only one value {'max_depth': [5]}
 cv: 5
 
 #calculates additionally the learning curve
