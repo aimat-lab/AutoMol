@@ -2,7 +2,7 @@ amount: 50
 dataset_location: 'lsdf:///lsdf/kit/iti/projects/aimat/datasets/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint', 'rdkit']
-label: 'homo'
+labels: ['homo']
 models_filter:
   - whitelist: 1
     git_uri: sklearn

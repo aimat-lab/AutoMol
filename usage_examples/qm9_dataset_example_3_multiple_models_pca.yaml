@@ -2,7 +2,7 @@ amount: 200
 dataset_location: '../data/dsgdb9nsd'
 dataset_class: 'QM9'
 features: ['fingerprint', 'rdkit']
-label: 'homo'
+labels: ['homo']
 models_filter:
   - whitelist: 1
     git_uri: sklearn
