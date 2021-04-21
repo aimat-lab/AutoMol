@@ -39,7 +39,7 @@ class Pipeline:
         self.dataset_splitter = ShuffleSplit(n_splits=self.train_test_splits, test_size=self.dataset_split_test_size)
         self.cv = self.spec['cv'] if 'cv' in self.spec else None
         self.mlflow_experiment = self.spec['mlflow_experiment']
-        self.is_learning_curve = 'is_learning_curve' in self.spec
+        self.is_learning_curve = self.spec['is_learning_curve'] if 'is_learning_curve' in self.spec else False
 
     def get_next_train_test_indices(self, feature, label):
         """
